@@ -3,18 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>相性診断ゲーム</title>
+  <title>相性占いゲーム</title>
   <style>
     :root {
-      --primary: #2dd4bf;
-      --primary-dark: #0f766e;
-      --accent: #fb7185;
-      --color-c: #a855f7;
-      --color-c-light: #f3e8ff;
-      --bg-color: #f8fafc;
-      --text-main: #1e293b;
-      --text-muted: #64748b;
-      --map-bg: #fdfbf7;
+      --bg-color: #f6f8fb;
+      --card-bg: #ffffff;
+      --primary: #20c997;
+      --accent-a: #20c997;
+      --accent-b: #ff6b6b;
+      --accent-c: #845ef7;
+      --text-main: #2b2d42;
+      --text-sub: #8d99ae;
     }
 
     * {
@@ -25,872 +24,757 @@
       user-select: none;
       -webkit-user-select: none;
     }
-    
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background-color: #1e293b;
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+      background-color: var(--bg-color);
       color: var(--text-main);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      overflow: hidden;
-    }
-    
-    #app-container {
-      width: 100%;
-      max-width: 440px;
       height: 100vh;
       display: flex;
       flex-direction: column;
-      position: relative;
-      background: #ffffff;
-      box-shadow: 0 0 30px rgba(0,0,0,0.3);
       overflow: hidden;
     }
-    
+
     /* ヘッダー */
     header {
       padding: 10px 16px;
+      background: #fff;
+      border-bottom: 1px solid #edf2f7;
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      background: #ffffff;
-      border-bottom: 1px solid #f1f5f9;
-      z-index: 10;
-      flex-shrink: 0;
-    }
-    
-    .status-badge {
-      background: #e6fcf5;
-      color: var(--primary-dark);
-      font-size: 12px;
-      font-weight: 800;
-      padding: 4px 12px;
-      border-radius: 20px;
-      display: flex;
       align-items: center;
-      gap: 6px;
+      z-index: 10;
     }
-    
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--primary);
-      box-shadow: 0 0 6px var(--primary);
-    }
-    
-    .counter {
+    .badge {
+      background: #e6fcf5;
+      color: #0ca678;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 12px;
       font-size: 13px;
-      font-weight: 700;
-      color: var(--text-muted);
     }
-    
-    .counter span {
-      font-size: 17px;
-      color: var(--text-main);
-      font-weight: 900;
+    .counter {
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--text-sub);
     }
-    
-    /* 上部：マップエリア (t2風) */
-    .map-section {
+
+    /* マップエリア（上半分） */
+    #map-container {
       height: 42%;
-      background: var(--map-bg);
-      background-image: 
-        radial-gradient(#e2e8f0 1.5px, transparent 1.5px),
-        radial-gradient(#f1f5f9 1.5px, var(--map-bg) 1.5px);
-      background-size: 20px 20px;
-      background-position: 0 0, 10px 10px;
+      background: #2b2d42;
       position: relative;
       overflow-x: auto;
       overflow-y: hidden;
       scroll-behavior: smooth;
-      border-bottom: 2px dashed #cbd5e1;
-      flex-shrink: 0;
     }
-    
-    .map-section::-webkit-scrollbar {
-      display: none;
-    }
-    
     #map-svg {
-      display: block;
       height: 100%;
+      min-width: 1400px;
+      display: block;
     }
-    
-    /* 主人公キャラクタ */
-    .player-token {
-      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
+
+    /* 主人公キャラ */
+    #player-avatar {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
       pointer-events: none;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: playerBounce 0.8s infinite alternate ease-in-out;
     }
-    
-    @keyframes bobbing {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-5px); }
+    .player-icon {
+      font-size: 26px;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
     }
-    
-    .player-avatar {
-      animation: bobbing 1.2s infinite ease-in-out;
+    @keyframes playerBounce {
+      0% { transform: translate(-50%, -70%); }
+      100% { transform: translate(-50%, -90%); }
     }
-    
-    /* 下部：クイズ＆3択カードエリア */
-    .quiz-section {
-      flex: 1;
+
+    /* 質問カードエリア（下半分） */
+    #quiz-container {
+      height: 58%;
       padding: 12px 16px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      background: #ffffff;
-      z-index: 5;
-      overflow: hidden;
-    }
-    
-    .question-box {
       background: #f8fafc;
-      border-radius: 12px;
-      padding: 10px 14px;
-      border-left: 5px solid var(--primary);
-      box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-      min-height: 50px;
-      display: flex;
-      align-items: center;
-      flex-shrink: 0;
+      overflow-y: auto;
     }
-    
-    .question-text {
-      font-size: 14px;
-      font-weight: 800;
+
+    .question-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+      border: 1px solid #edf2f7;
+    }
+    .q-tag {
+      font-size: 11px;
+      font-weight: 900;
+      color: var(--primary);
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+      display: block;
+    }
+    .q-text {
+      font-size: 15px;
+      font-weight: bold;
       line-height: 1.4;
       color: var(--text-main);
     }
-    
-    .cards-container {
+
+    /* 選択肢ボタン (A / B / C) */
+    .choices-list {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      margin: 6px 0;
-      flex: 1;
-      justify-content: center;
+      margin: 8px 0;
     }
-    
     .choice-card {
-      background: #ffffff;
-      border: 2px solid #e2e8f0;
-      border-radius: 12px;
+      background: #fff;
+      border-radius: 14px;
       padding: 10px 14px;
+      border: 2px solid transparent;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.03);
       display: flex;
       align-items: center;
+      gap: 12px;
       cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-      transition: transform 0.1s ease, border-color 0.1s ease, background 0.1s ease;
+      transition: transform 0.1s, border-color 0.2s, box-shadow 0.2s;
     }
-    
     .choice-card:active {
       transform: scale(0.97);
     }
-    
-    .card-tag {
-      width: 26px;
-      height: 26px;
-      border-radius: 6px;
+    .choice-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 900;
-      font-size: 13px;
-      margin-right: 12px;
+      font-size: 14px;
+      color: #fff;
       flex-shrink: 0;
     }
-    
-    .choice-card.a .card-tag { background: #e6fcf5; color: var(--primary-dark); }
-    .choice-card.a:active { background: #f0fdf9; border-color: var(--primary); }
-    
-    .choice-card.b .card-tag { background: #ffe4e6; color: var(--accent); }
-    .choice-card.b:active { background: #fff1f2; border-color: var(--accent); }
-    
-    .choice-card.c .card-tag { background: var(--color-c-light); color: var(--color-c); }
-    .choice-card.c:active { background: #f5f3ff; border-color: var(--color-c); }
-    
-    .card-text {
+    .choice-card.type-A { border-color: #e6fcf5; }
+    .choice-card.type-A .choice-badge { background: var(--accent-a); }
+    .choice-card.type-B { border-color: #ffe3e3; }
+    .choice-card.type-B .choice-badge { background: var(--accent-b); }
+    .choice-card.type-C { border-color: #f3f0ff; }
+    .choice-card.type-C .choice-badge { background: var(--accent-c); }
+
+    .choice-text {
       font-size: 13px;
-      font-weight: 700;
-      line-height: 1.35;
-      flex: 1;
-      color: #334155;
+      font-weight: bold;
+      color: #495057;
+      text-align: left;
     }
-    
-    .card-arrow {
-      color: #cbd5e1;
-      font-size: 12px;
-      margin-left: 8px;
-    }
-    
-    .legend-footer {
-      display: flex;
-      justify-content: space-around;
-      padding-top: 8px;
-      border-top: 1px solid #f1f5f9;
-      font-size: 10px;
-      color: var(--text-muted);
-      font-weight: 700;
-      flex-shrink: 0;
-    }
-    
-    /* ====================================================
-       結果画面：パンパンくん風 ド派手ポップデザイン
-       ==================================================== */
+
+    /* 結果モーダル（ド派手演出） */
     #result-modal {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      position: fixed;
+      inset: 0;
       z-index: 100;
       display: none;
       flex-direction: column;
       align-items: center;
       justify-content: space-between;
-      padding: 30px 20px 24px;
-      text-align: center;
+      padding: 40px 20px 30px;
       overflow: hidden;
-      box-sizing: border-box;
-      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      animation: modalFadeIn 0.4s ease forwards;
     }
-    
-    @keyframes popIn {
-      0% { opacity: 0; transform: scale(0.9); }
-      100% { opacity: 1; transform: scale(1); }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
     }
-    
-    /* ぐるぐる回転する放射状背景 */
-    .result-bg-sunburst {
+
+    /* ぐるぐる渦巻きアニメーション背景 */
+    .spiral-bg {
       position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
+      inset: -100%;
+      width: 300%;
+      height: 300%;
       background: repeating-conic-gradient(
-        from 0deg,
-        #48bb78 0deg 15deg,
-        #38a169 15deg 30deg
+        var(--res-bg-1) 0deg 15deg,
+        var(--res-bg-2) 15deg 30deg
       );
+      animation: rotateSpiral 25s linear infinite;
       z-index: 1;
-      animation: rotateSun 35s linear infinite;
     }
-    
-    @keyframes rotateSun {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
+    @keyframes rotateSpiral {
+      100% { transform: rotate(360deg); }
     }
-    
-    .result-content-layer {
-      position: relative;
-      z-index: 2;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-    }
-    
-    /* 上部：破れた紙風の見出しボックス */
+
+    /* ちぎり紙風タイトル */
     .paper-banner {
-      background: #ffffff;
-      padding: 10px 18px 12px;
-      border: 3px solid #2d3748;
-      box-shadow: 4px 5px 0px rgba(0,0,0,0.3);
       position: relative;
-      width: 88%;
-      transform: rotate(-1.5deg);
-      clip-path: polygon(
-        0% 3%, 3% 0%, 97% 1%, 100% 4%, 98% 96%, 95% 100%, 4% 98%, 0% 95%
-      );
+      z-index: 10;
+      background: #ffffff;
+      padding: 10px 25px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      border-radius: 4px;
+      transform: rotate(-3deg);
+      border: 2px dashed #333;
+      text-align: center;
+      max-width: 90%;
     }
-    
-    .paper-tag {
-      font-size: 15px;
+    .paper-banner .tag {
+      color: #2b8a3e;
+      font-size: 16px;
       font-weight: 900;
-      color: #2f855a;
-      text-shadow: 1px 1px 0 #fff;
-      display: block;
-      margin-bottom: 2px;
+      letter-spacing: 1px;
     }
-    
-    .paper-title {
-      font-size: 24px;
+    .paper-banner .main-title {
+      font-size: 26px;
       font-weight: 900;
-      color: #22543d;
-      letter-spacing: -0.5px;
+      color: #1a1a1a;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
     }
-    
-    .paper-corner-face {
+    .corner-face {
       position: absolute;
-      top: -22px;
-      right: -8px;
-      font-size: 38px;
-      filter: drop-shadow(2px 3px 0px rgba(0,0,0,0.3));
-      transform: rotate(10deg);
+      right: -18px;
+      top: -24px;
+      font-size: 34px;
+      transform: rotate(12deg);
     }
-    
-    /* 中央：キャラと特大判定 */
-    .center-stage {
+
+    /* 中央キャラ・判定 */
+    .character-area {
       position: relative;
-      width: 250px;
-      height: 250px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 10px 0;
-    }
-    
-    /* 黄色の満月サークル */
-    .sun-circle {
-      position: absolute;
-      width: 210px;
-      height: 210px;
-      background: #fef08a;
-      border-radius: 50%;
-      box-shadow: inset 0 0 20px rgba(250, 204, 21, 0.6), 0 0 25px rgba(254, 240, 138, 0.6);
-      z-index: 1;
-    }
-    
-    /* メイン大吉文字（手書き極太風） */
-    .huge-rank {
-      position: absolute;
-      top: 6px;
-      left: 10px;
-      z-index: 5;
-      font-size: 48px;
-      font-weight: 900;
-      color: #ffffff;
-      text-shadow: 
-        3px 3px 0 #000,
-        -3px -3px 0 #000,
-        3px -3px 0 #000,
-        -3px 3px 0 #000,
-        0 4px 6px rgba(0,0,0,0.5);
-      transform: rotate(-8deg);
-      letter-spacing: 2px;
-    }
-    
-    /* メインキャラ */
-    .character-box {
-      position: relative;
-      z-index: 3;
-      font-size: 100px;
-      filter: drop-shadow(0 10px 10px rgba(0,0,0,0.3));
-      animation: charWobble 2s infinite ease-in-out;
-    }
-    
-    @keyframes charWobble {
-      0%, 100% { transform: scale(1) translateY(0); }
-      50% { transform: scale(1.05) translateY(-6px); }
-    }
-    
-    /* 下部：キャッチコピー ＆ ボタン */
-    .result-bottom-box {
-      width: 100%;
+      z-index: 10;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 12px;
+      justify-content: center;
     }
-    
-    .catchphrase-1 {
-      font-size: 19px;
-      font-weight: 900;
-      color: #fef08a;
-      text-shadow: 
-        2px 2px 0 #000,
-        -2px -2px 0 #000,
-        2px -2px 0 #000,
-        -2px 2px 0 #000,
-        0 3px 5px rgba(0,0,0,0.5);
-      line-height: 1.3;
-    }
-    
-    .catchphrase-2 {
-      font-size: 17px;
+    .rank-text {
+      position: absolute;
+      top: -30px;
+      left: -20px;
+      font-size: 46px;
       font-weight: 900;
       color: #ffffff;
-      text-shadow: 
-        2px 2px 0 #000,
-        -2px -2px 0 #000,
-        2px -2px 0 #000,
-        -2px 2px 0 #000,
-        0 3px 5px rgba(0,0,0,0.5);
-      letter-spacing: 0.5px;
+      -webkit-text-stroke: 3px #000;
+      text-shadow: 4px 4px 0 #000;
+      transform: rotate(-10deg);
+      z-index: 15;
     }
-    
+    .yellow-circle {
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, #fff3bf 60%, #ffd43b 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      border: 4px solid #fff;
+      overflow: hidden;
+    }
+    .main-character {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 90px;
+      animation: charPulse 1.2s infinite alternate ease-in-out;
+    }
+    .main-character img {
+      max-width: 85%;
+      max-height: 85%;
+      object-fit: contain;
+    }
+    @keyframes charPulse {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.06); }
+    }
+
+    /* 下部テキスト */
+    .result-footer-text {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+    }
+    .impact-text-1 {
+      font-size: 22px;
+      font-weight: 900;
+      color: #ffea00;
+      -webkit-text-stroke: 2px #000;
+      text-shadow: 3px 3px 0 #000;
+      margin-bottom: 4px;
+    }
+    .impact-text-2 {
+      font-size: 20px;
+      font-weight: 900;
+      color: #ffffff;
+      -webkit-text-stroke: 2px #000;
+      text-shadow: 3px 3px 0 #000;
+    }
+
     .retry-btn {
-      margin-top: 4px;
-      background: #facc15;
-      color: #000000;
-      border: 3px solid #000000;
-      box-shadow: 0 5px 0 #000000;
-      padding: 12px 36px;
+      position: relative;
+      z-index: 10;
+      margin-top: 15px;
+      background: #fff;
+      border: 3px solid #000;
+      color: #000;
       font-size: 16px;
       font-weight: 900;
+      padding: 10px 35px;
       border-radius: 30px;
+      box-shadow: 0 6px 0 #000;
       cursor: pointer;
-      letter-spacing: 1px;
-      transition: transform 0.1s, box-shadow 0.1s;
+      outline: none;
     }
-    
     .retry-btn:active {
       transform: translateY(4px);
-      box-shadow: 0 1px 0 #000000;
+      box-shadow: 0 2px 0 #000;
     }
   </style>
 </head>
 <body>
 
-<div id="app-container">
-  <!-- ヘッダー -->
   <header>
-    <div class="status-badge">
-      <div class="status-dot"></div>
-      ROUTE MAP
-    </div>
-    <div class="counter">残り <span id="remaining-count">10</span> 問</div>
+    <span class="badge">相性診断マップ</span>
+    <span class="counter" id="progress-text">残り 10 問</span>
   </header>
 
-  <!-- 上部：進行マップ (t2風) -->
-  <div class="map-section" id="map-scroll-area">
+  <!-- マップエリア -->
+  <div id="map-container">
     <svg id="map-svg"></svg>
+    <div id="player-avatar">
+      <div class="player-icon">👑</div>
+    </div>
   </div>
 
-  <!-- 下部：3択カード (t1風) -->
-  <div class="quiz-section">
+  <!-- クイズエリア -->
+  <div id="quiz-container">
     <div class="question-box">
-      <div class="question-text" id="question-text">読み込み中...</div>
+      <span class="q-tag" id="q-number">QUESTION 01</span>
+      <div class="q-text" id="q-text">読み込み中...</div>
     </div>
 
-    <div class="cards-container">
-      <div class="choice-card a" onclick="handleChoice('A')">
-        <div class="card-tag">A</div>
-        <div class="card-text" id="choice-a-text">-</div>
-        <div class="card-arrow">▶</div>
-      </div>
-      <div class="choice-card b" onclick="handleChoice('B')">
-        <div class="card-tag">B</div>
-        <div class="card-text" id="choice-b-text">-</div>
-        <div class="card-arrow">▶</div>
-      </div>
-      <div class="choice-card c" onclick="handleChoice('C')">
-        <div class="card-tag">C</div>
-        <div class="card-text" id="choice-c-text">-</div>
-        <div class="card-arrow">▶</div>
-      </div>
-    </div>
-    
-    <div class="legend-footer">
-      <div>☕ 日常</div>
-      <div>❤️ 恋愛</div>
-      <div>💀 本音</div>
-      <div>⚡ 試練</div>
-      <div>👑 最終判定</div>
-    </div>
+    <div class="choices-list" id="choices-container"></div>
+    <div style="font-size: 10px; color: #adb5bd; text-align: center;">直感でカードを選択してください</div>
   </div>
 
-  <!-- 結果画面（パンパンくん風） -->
+  <!-- 結果モーダル（渦巻き画面） -->
   <div id="result-modal">
-    <div class="result-bg-sunburst" id="res-sunburst"></div>
-    <div class="result-content-layer">
+    <div class="spiral-bg" id="spiral-bg"></div>
 
-      <!-- 上部破れ紙バナー -->
-      <div class="paper-banner">
-        <span class="paper-tag" id="res-hashtag">#きょうの</span>
-        <div class="paper-title" id="res-paper-title">相性占い</div>
-        <div class="paper-corner-face" id="res-corner-face">🤪</div>
+    <div class="paper-banner">
+      <div class="tag" id="res-tag">#きょうの占い</div>
+      <div class="main-title" id="res-title">相性診断</div>
+      <div class="corner-face" id="res-corner-face">🤪</div>
+    </div>
+
+    <div class="character-area">
+      <div class="rank-text" id="res-rank">大吉</div>
+      <div class="yellow-circle">
+        <div class="main-character" id="res-char">🐼</div>
       </div>
-    
-      <!-- 中央：満月サークル ＋ 極太判定文字 ＋ キャラ -->
-      <div class="center-stage">
-        <div class="sun-circle"></div>
-        <div class="huge-rank" id="res-rank">大吉</div>
-        <div class="character-box" id="res-char">🐼</div>
-      </div>
-    
-      <!-- 下部：キャッチコピー ＆ もう一度ボタン -->
-      <div class="result-bottom-box">
-        <div>
-          <div class="catchphrase-1" id="res-line1">今日はみんなの人気者！</div>
-          <div class="catchphrase-2" id="res-line2">〜作者との相性120%〜</div>
-        </div>
-        <button class="retry-btn" onclick="restartGame()">もう一度占う！</button>
-      </div>
-    
+    </div>
+
+    <div class="result-footer-text">
+      <div class="impact-text-1" id="res-line1">今日はみんなの人気者！</div>
+      <div class="impact-text-2" id="res-line2">〜相性抜群のパートナー〜</div>
+      <button class="retry-btn" onclick="restartGame()">もう一度占う</button>
     </div>
   </div>
-</div>
 
-<script>
-/* ==========================================================================
-   GAME_DATA: 質問・選択肢・結果の設定
-   ※ここを書き換えるだけで、質問や結果文を自由に変更できます！
-   ========================================================================== */
-const GAME_DATA = {
-  questions: [
-    {
-      q: "Q1. 突然丸一日ヒマになった！どうする？",
-      a: "昼まで寝てYouTube三昧",
-      b: "即座にカフェや買い物に出かける",
-      c: "溜まってた掃除や部屋の片付け",
-      icon: "☕"
-    },
-    {
-      q: "Q2. LINEが来たらどう返すタイプ？",
-      a: "秒で即レス！溜めるの嫌い",
-      b: "通知見て満足して数時間後",
-      c: "スタンプ1個でテキトーに会話終了",
-      icon: "💬"
-    },
-    {
-      q: "Q3. 仲良くなる人に求める一番の要素は？",
-      a: "笑いのツボやノリが合うこと",
-      b: "沈黙でも気まずくならない安心感",
-      c: "お互いの自由を邪魔しない距離感",
-      icon: "❤️"
-    },
-    {
-      q: "Q4. 友だちとの食事、お店選びはどうする？",
-      a: "口コミを徹底調査して予約まで完了",
-      b: "適当に街を歩いて直感で決める",
-      c: "全部相手に丸投げしてついていく",
-      icon: "🍕"
-    },
-    {
-      q: "Q5. ぶっちゃけ、人見知りはする？",
-      a: "初対面は地蔵。慣れたらマシンガン",
-      b: "誰とでも3分でマブダチになれる",
-      c: "人は好きだけどすぐHP切れする",
-      icon: "💀"
-    },
-    {
-      q: "Q6. 深夜2時に食べたくなる禁断の夜食は？",
-      a: "こってり系カップラーメン",
-      b: "コンビニのホットスナックやアイス",
-      c: "罪悪感に耐えて白湯を飲む",
-      icon: "⚡"
-    },
-    {
-      q: "Q7. 自分はどんな性格だと思う？",
-      a: "感情豊かな気分屋パッション系",
-      b: "冷静沈着で合理的なマイペース",
-      c: "周りに合わせまくるカメレオン",
-      icon: "🎭"
-    },
-    {
-      q: "Q8. 旅行に行くときの計画スタイルは？",
-      a: "分刻みで行きたい場所を決める",
-      b: "宿と移動手段だけ取ってあとは自由",
-      c: "気分次第。前日に全部決める",
-      icon: "✈️"
-    },
-    {
-      q: "Q9. これだけは絶対に許せないことは？",
-      a: "理不尽なドタキャンや遅刻",
-      b: "マナーが悪い店員や他人への態度",
-      c: "人の話を聞かずに否定から入る奴",
-      icon: "🔥"
-    },
-    {
-      // ★オチの第10問（この回答で最終結果が決定！）
-      q: "Q10. 【最終試練】きのこの山 vs たけのこの里、どっち派？",
-      a: "たけのこの里（圧倒的クッキー派）",
-      b: "きのこの山（チョコの純度を愛する派）",
-      c: "たべっ子どうぶつしか勝たん",
-      icon: "👑"
-    }
-  ],
-
-  // 最後のQ10で選んだ選択肢（A/B/C）に応じて表示される結果
-  results: {
-    A: {
-      tag: "#きょうの作者診断",
-      title: "パンパン相性",
-      cornerFace: "🤩",
-      rank: "大吉",
-      char: "🐼",
-      bgColors: ["#48bb78", "#38a169"], // 緑の渦巻き
-      line1: "奇跡のシンクロ率120%！",
-      line2: "〜前世は双子のパンダ〜"
-    },
-    B: {
-      tag: "#きょうの作者診断",
-      title: "パンパン相性",
-      cornerFace: "😱",
-      rank: "大凶",
-      char: "👺",
-      bgColors: ["#f87171", "#dc2626"], // 赤の渦巻き
-      line1: "相性0%！解釈不一致の極み！",
-      line2: "〜前世で領地を争った宿敵〜"
-    },
-    C: {
-      tag: "#きょうの作者診断",
-      title: "パンパン相性",
-      cornerFace: "🤔",
-      rank: "中吉",
-      char: "🦊",
-      bgColors: ["#fbbf24", "#d97706"], // 黄色の渦巻き
-      line1: "程よい距離感のビジネス仲！",
-      line2: "〜年に1回呑むと一番楽しい奴〜"
-    }
-  }
-};
-
-/* ==========================================================================
-   システムロジック
-   ========================================================================== */
-const TOTAL_QUESTIONS = GAME_DATA.questions.length; // 10
-let currentStep = 0;
-let currentLane = 0; // -2, -1, 0, 1, 2
-
-const STEP_LANES = [
-  [0],               // step 0 (Q1)
-  [-1, 0, 1],        // step 1
-  [-2, -1, 0, 1, 2], // step 2
-  [-2, -1, 0, 1, 2], // step 3
-  [-2, -1, 0, 1, 2], // step 4
-  [-2, -1, 0, 1, 2], // step 5
-  [-2, -1, 0, 1, 2], // step 6
-  [-1, 0, 1],        // step 7 (収束開始)
-  [0],               // step 8 (中央合流)
-  [0],               // step 9 (Q10: 運命の中央ノード)
-  [0]                // step 10 (ゴール)
-];
-
-const NODE_X_GAP = 76;
-const NODE_Y_GAP = 42;
-const MAP_OFFSET_X = 50;
-const MAP_CENTER_Y = 110;
-
-function getNodeCoord(step, lane) {
-  return {
-    x: MAP_OFFSET_X + step * NODE_X_GAP,
-    y: MAP_CENTER_Y + lane * NODE_Y_GAP
-  };
-}
-
-// マップSVG描画
-function renderMap() {
-  const svg = document.getElementById('map-svg');
-  svg.innerHTML = '';
-
-  const totalWidth = MAP_OFFSET_X + (TOTAL_QUESTIONS + 1) * NODE_X_GAP + 50;
-  svg.setAttribute('width', totalWidth);
-  svg.setAttribute('height', '100%');
-
-  // ルート接続線の描画
-  for (let s = 0; s < TOTAL_QUESTIONS; s++) {
-    const fromLanes = STEP_LANES[s];
-    const toLanes = STEP_LANES[s + 1];
-
-    fromLanes.forEach(fLane => {
-      const fromPt = getNodeCoord(s, fLane);
-      toLanes.forEach(tLane => {
-        if (Math.abs(tLane - fLane) <= 1 || (s >= 7 && toLanes.length === 1)) {
-          const toPt = getNodeCoord(s + 1, tLane);
-          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-          const d = `M ${fromPt.x} ${fromPt.y} C ${fromPt.x + 35} ${fromPt.y}, ${toPt.x - 35} ${toPt.y}, ${toPt.x} ${toPt.y}`;
-          path.setAttribute("d", d);
-          path.setAttribute("fill", "none");
-          path.setAttribute("stroke", "#e2e8f0");
-          path.setAttribute("stroke-width", "3");
-          path.setAttribute("stroke-dasharray", "4,4");
-          path.id = `link-${s}_${fLane}-to-${s+1}_${tLane}`;
-          svg.appendChild(path);
+  <script>
+    /* =========================================================
+       ★ ゲーム設定（テキスト・結果・質問文はここを編集）★
+       ========================================================= */
+    const GAME_DATA = {
+      // 質問リスト（全10問）
+      questions: [
+        {
+          text: "休日に突然丸一日予定が空いたらどうする？",
+          choices: [
+            { label: "前日から綿密に計画して遠出する", type: "A" },
+            { label: "近場のカフェやサウナで適当に過ごす", type: "B" },
+            { label: "ベッドから一歩も出ず夕方まで寝る", type: "C" }
+          ]
+        },
+        {
+          text: "LINEの返信速度、自分はぶっちゃけ…",
+          choices: [
+            { label: "通知即レス派。溜めるのが嫌い", type: "A" },
+            { label: "気付いたら返す。基本マイペース", type: "B" },
+            { label: "未読スルー常習犯。数日後もザラ", type: "C" }
+          ]
+        },
+        {
+          text: "友達とのご飯、店を決める時は？",
+          choices: [
+            { label: "食べログやSNSで映えや評価を徹底リサーチ", type: "A" },
+            { label: "とりあえずその場で目に入った店に入る", type: "B" },
+            { label: "「何でもいいよ〜」と他人に全任せ", type: "C" }
+          ]
+        },
+        {
+          text: "買い物をするときの一番の決め手は？",
+          choices: [
+            { label: "デザイン・見た目の直感", type: "A" },
+            { label: "コスパと機能性のバランス", type: "B" },
+            { label: "店員さんの熱意に押されて勢い", type: "C" }
+          ]
+        },
+        {
+          text: "人との会話で一番大事にしたいのは？",
+          choices: [
+            { label: "テンポと笑い（ボケ・ツッコミ）", type: "A" },
+            { label: "共感と穏やかな空気感", type: "B" },
+            { label: "有益な情報や深い議論", type: "C" }
+          ]
+        },
+        {
+          text: "ピンチの時（遅刻確定など）の行動は？",
+          choices: [
+            { label: "すぐに全力で謝罪＆現状報告", type: "A" },
+            { label: "ギリギリまで最短ルートを探して足掻く", type: "B" },
+            { label: "「まあなんとかなるか」と開き直る", type: "C" }
+          ]
+        },
+        {
+          text: "カラオケに行ったらどう振る舞う？",
+          choices: [
+            { label: "最新の流行曲を歌いまくる", type: "A" },
+            { label: "タンバリンや合いの手で盛り上げに徹する", type: "B" },
+            { label: "端っこでポテトを食べながら聴く専", type: "C" }
+          ]
+        },
+        {
+          text: "旅行に行くときの荷物は？",
+          choices: [
+            { label: "万が一に備えてパンパンの大荷物", type: "A" },
+            { label: "リュック1つのミニマリスト", type: "B" },
+            { label: "忘れ物だらけで現地調達スタイル", type: "C" }
+          ]
+        },
+        {
+          text: "今夜の夕食、迷ったときの第一候補は？",
+          choices: [
+            { label: "がっつり肉・ラーメン", type: "A" },
+            { label: "さっぱり和食・お寿司", type: "B" },
+            { label: "スパイシーなカレー・激辛系", type: "C" }
+          ]
+        },
+        /* ★オチの第10問：この回答ですべてが決まる！★ */
+        {
+          text: "【究極の選択】正直、きのこ派？たけのこ派？",
+          choices: [
+            { label: "絶対にきのこの山！", type: "A" },
+            { label: "愚問、たけのこの里一択！", type: "B" },
+            { label: "アルフォートが一番うまい", type: "C" }
+          ]
         }
+      ],
+
+      /* 結果データ（絵文字・images/フォルダ内の画像パスどちらも指定可能） */
+      results: {
+        A: {
+          tag: "#きょうの作者診断",
+          title: "パンパン相性",
+          cornerFace: "🤩",
+          rank: "大吉",
+          char: "🐼", /* "images/panda.png" のように画像パスでもOK */
+          bgColors: ["#48bb78", "#38a169"],
+          line1: "奇跡のシンクロ率120%！",
+          line2: "〜前世は双子のパンダ〜"
+        },
+        B: {
+          tag: "#きょうの作者診断",
+          title: "相性絶望",
+          cornerFace: "😱",
+          rank: "大凶",
+          char: "👿", /* "images/devil.png" など */
+          bgColors: ["#e53e3e", "#c53030"],
+          line1: "相性0%！前世からの宿敵！",
+          line2: "〜絶対に分かり合えない関係〜"
+        },
+        C: {
+          tag: "#きょうの作者診断",
+          title: "微妙な相性",
+          cornerFace: "🫠",
+          rank: "中吉",
+          char: "🗿", /* "images/moai.png" など */
+          bgColors: ["#805ad5", "#6b46c1"],
+          line1: "相性50%！程よいビジネス仲間！",
+          line2: "〜年に1回会えば十分な距離感〜"
+        }
+      }
+    };
+
+    /* =========================================================
+       マップ構造の生成（縦5段 ➔ 最後に🔥1つに完全収束）
+       ========================================================= */
+    const TOTAL_STEPS = 10;
+    const NODE_SPACING_X = 130;
+    const SVG_HEIGHT = 260;
+    const CENTER_Y = SVG_HEIGHT / 2;
+    const ROW_OFFSET = 38; // 縦の間隔
+
+    // 各ステップで存在できる行（0=中央, ±1, ±2の最大5列）
+    // ステップ9で1列（0）、ステップ10で🔥1つに完全収束
+    const STEP_ROWS = [
+      [0],              // 0: スタート
+      [-1, 0, 1],       // 1
+      [-1, 0, 1],       // 2
+      [-2, -1, 0, 1, 2],// 3（最大5段に広がる）
+      [-2, -1, 0, 1, 2],// 4
+      [-2, -1, 0, 1, 2],// 5
+      [-1, 0, 1],       // 6（徐々に収束）
+      [-1, 0, 1],       // 7
+      [-1, 0, 1],       // 8
+      [0],              // 9（中央1ノードへ集合）
+      [0]               // 10（完全収束：🔥ボスアイコン）
+    ];
+
+    const ICONS_POOL = ["⚔️", "☕", "❤️", "💎", "🛡️", "🔮", "✨", "🎲", "🍖"];
+
+    let nodes = {};
+    let edges = [];
+
+    // ノードの定義
+    for (let step = 0; step <= TOTAL_STEPS; step++) {
+      const rows = STEP_ROWS[step];
+      rows.forEach(r => {
+        const id = `${step}_${r}`;
+        let icon = "❓";
+        if (step === 0) icon = "🚩";
+        else if (step === TOTAL_STEPS) icon = "🔥"; // 最後の完全収束ノード
+        else icon = ICONS_POOL[(step * 3 + Math.abs(r)) % ICONS_POOL.length];
+
+        nodes[id] = {
+          id: id,
+          step: step,
+          row: r,
+          x: 60 + step * NODE_SPACING_X,
+          y: CENTER_Y + r * ROW_OFFSET,
+          icon: icon
+        };
       });
-    });
-  }
+    }
 
-  // ノードの描画
-  for (let s = 0; s <= TOTAL_QUESTIONS; s++) {
-    const lanes = STEP_LANES[s];
-    lanes.forEach(lane => {
-      const pt = getNodeCoord(s, lane);
-      const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      group.id = `node-${s}_${lane}`;
+    // エッジ（接続線）の接続
+    for (let step = 0; step < TOTAL_STEPS; step++) {
+      const currentRows = STEP_ROWS[step];
+      const nextRows = STEP_ROWS[step + 1];
 
-      const hex = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-      const r = 21;
-      let points = "";
+      currentRows.forEach(cr => {
+        const fromId = `${step}_${cr}`;
+        nextRows.forEach(nr => {
+          // 行の移動が±1以内、または最終合流ノードなら繋ぐ
+          if (Math.abs(cr - nr) <= 1 || nextRows.length === 1) {
+            edges.push({ from: fromId, to: nextRows.length === 1 ? `${step+1}_0` : `${step+1}_${nr}` });
+          }
+        });
+      });
+    }
+
+    /* =========================================================
+       マップ描画（SVG）
+       ========================================================= */
+    const svg = document.getElementById('map-svg');
+
+    // 六角形パスの計算
+    function hexPath(cx, cy, r) {
+      let path = "";
       for (let i = 0; i < 6; i++) {
         const angle = (Math.PI / 3) * i;
-        const hx = pt.x + r * Math.cos(angle);
-        const hy = pt.y + r * Math.sin(angle);
-        points += `${hx},${hy} `;
+        const x = cx + r * Math.cos(angle);
+        const y = cy + r * Math.sin(angle);
+        path += (i === 0 ? "M" : "L") + `${x},${y}`;
       }
-      hex.setAttribute("points", points.trim());
-      hex.setAttribute("fill", s === 0 ? "#ffffff" : "#f1f5f9");
-      hex.setAttribute("stroke", s === 0 ? "var(--primary)" : "#cbd5e1");
-      hex.setAttribute("stroke-width", s === 0 ? "3" : "2");
-      group.appendChild(hex);
-    
-      const icon = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      icon.setAttribute("x", pt.x);
-      icon.setAttribute("y", pt.y + 6);
-      icon.setAttribute("text-anchor", "middle");
-      icon.setAttribute("font-size", "14px");
-      
-      if (s === TOTAL_QUESTIONS) {
-        icon.textContent = "👑";
-      } else {
-        icon.textContent = GAME_DATA.questions[s]?.icon || "⚔️";
-      }
-      group.appendChild(icon);
-    
-      svg.appendChild(group);
-    });
-  }
-
-  // 主人公キャラクタピンの描画
-  const playerGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  playerGroup.id = "player-token";
-  playerGroup.setAttribute("class", "player-token");
-
-  const startPt = getNodeCoord(0, 0);
-  playerGroup.setAttribute("transform", `translate(${startPt.x}, ${startPt.y - 28})`);
-
-  playerGroup.innerHTML = `
-    <g class="player-avatar">
-      <circle cx="0" cy="0" r="16" fill="#fb7185" stroke="#ffffff" stroke-width="2.5"/>
-      <text x="0" y="5" text-anchor="middle" font-size="13">🧑‍🚀</text>
-      <polygon points="-5,14 5,14 0,20" fill="#fb7185"/>
-    </g>
-  `;
-  svg.appendChild(playerGroup);
-}
-
-// 画面の更新
-function updateUI() {
-  if (currentStep >= TOTAL_QUESTIONS) return;
-
-  const qData = GAME_DATA.questions[currentStep];
-  document.getElementById('question-text').textContent = qData.q;
-  document.getElementById('choice-a-text').textContent = qData.a;
-  document.getElementById('choice-b-text').textContent = qData.b;
-  document.getElementById('choice-c-text').textContent = qData.c;
-
-  document.getElementById('remaining-count').textContent = TOTAL_QUESTIONS - currentStep;
-
-  // 主人公の位置を更新
-  const pt = getNodeCoord(currentStep, currentLane);
-  const player = document.getElementById('player-token');
-  if (player) {
-    player.setAttribute("transform", `translate(${pt.x}, ${pt.y - 28})`);
-  }
-
-  // 通過したノードをハイライト
-  const currentNode = document.getElementById(`node-${currentStep}_${currentLane}`);
-  if (currentNode) {
-    const poly = currentNode.querySelector('polygon');
-    if (poly) {
-      poly.setAttribute("fill", "#e6fcf5");
-      poly.setAttribute("stroke", "var(--primary)");
-      poly.setAttribute("stroke-width", "3");
+      return path + "Z";
     }
-  }
 
-  // スクロール追従
-  const mapArea = document.getElementById('map-scroll-area');
-  const scrollTarget = Math.max(0, pt.x - mapArea.clientWidth / 2);
-  mapArea.scrollTo({ left: scrollTarget, behavior: 'smooth' });
-}
+    // エッジの描画
+    edges.forEach(e => {
+      const n1 = nodes[e.from];
+      const n2 = nodes[e.to];
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", n1.x);
+      line.setAttribute("y1", n1.y);
+      line.setAttribute("x2", n2.x);
+      line.setAttribute("y2", n2.y);
+      line.setAttribute("stroke", "#4a4e69");
+      line.setAttribute("stroke-width", "2");
+      line.setAttribute("stroke-dasharray", "4,3");
+      line.setAttribute("id", `edge-${e.from}-${e.to}`);
+      svg.appendChild(line);
+    });
 
-// 選択肢タップ時
-function handleChoice(choice) {
-  if (currentStep >= TOTAL_QUESTIONS) return;
+    // ノードの描画
+    Object.values(nodes).forEach(n => {
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      g.setAttribute("id", `node-${n.id}`);
 
-  const prevStep = currentStep;
-  const prevLane = currentLane;
+      // 六角形背景
+      const hex = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      hex.setAttribute("d", hexPath(n.x, n.y, 20));
+      hex.setAttribute("fill", n.step === TOTAL_STEPS ? "#ff6b6b" : "#3d405b");
+      hex.setAttribute("stroke", "#8d99ae");
+      hex.setAttribute("stroke-width", "2");
+      g.appendChild(hex);
 
-  // 次のレーン計算 (A=上へ, B=直進, C=下へ)
-  let nextLane = prevLane;
-  if (choice === 'A') nextLane = prevLane - 1;
-  else if (choice === 'B') nextLane = prevLane;
-  else if (choice === 'C') nextLane = prevLane + 1;
+      // アイコン文字
+      const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      text.setAttribute("x", n.x);
+      text.setAttribute("y", n.y + 6);
+      text.setAttribute("text-anchor", "middle");
+      text.setAttribute("font-size", n.step === TOTAL_STEPS ? "18" : "15");
+      text.textContent = n.icon;
+      g.appendChild(text);
 
-  const validLanes = STEP_LANES[prevStep + 1];
-  if (!validLanes.includes(nextLane)) {
-    // 枠外なら最も近いレーンに補正
-    nextLane = validLanes.reduce((prev, curr) => 
-      Math.abs(curr - nextLane) < Math.abs(prev - nextLane) ? curr : prev
-    );
-  }
+      svg.appendChild(g);
+    });
 
-  // 線のハイライト
-  const linkId = `link-${prevStep}_${prevLane}-to-${prevStep + 1}_${nextLane}`;
-  const link = document.getElementById(linkId);
-  if (link) {
-    link.setAttribute("stroke", "var(--primary)");
-    link.setAttribute("stroke-width", "4");
-    link.setAttribute("stroke-dasharray", "none");
-  }
+    /* =========================================================
+       ゲーム進行ロジック
+       ========================================================= */
+    let currentStep = 0;
+    let currentRow = 0;
+    let lastChoiceType = "A";
 
-  currentStep++;
-  currentLane = nextLane;
+    function updatePlayerPosition() {
+      const currentNodeId = `${currentStep}_${currentRow}`;
+      const node = nodes[currentNodeId];
+      const avatar = document.getElementById('player-avatar');
 
-  if (currentStep === TOTAL_QUESTIONS) {
-    // 最後の質問回答：オチの結果を表示！
-    updateUI();
-    setTimeout(() => {
-      showResult(choice);
-    }, 450);
-  } else {
-    updateUI();
-  }
-}
+      avatar.style.left = `${node.x}px`;
+      avatar.style.top = `${node.y}px`;
 
-// 結果画面表示（パンパンくん風）
-function showResult(lastChoice) {
-  const res = GAME_DATA.results[lastChoice] || GAME_DATA.results.A;
+      // 自動横スクロール追従
+      const container = document.getElementById('map-container');
+      const targetScroll = node.x - container.clientWidth / 2;
+      container.scrollTo({ left: Math.max(0, targetScroll), behavior: 'smooth' });
 
-  // 背景グラデーションの設定
-  const sunburst = document.getElementById('res-sunburst');
-  sunburst.style.background = `repeating-conic-gradient(
-    from 0deg,
-    ${res.bgColors[0]} 0deg 15deg,
-    ${res.bgColors[1]} 15deg 30deg
-  )`;
+      // 通過ノードの点灯
+      const nodeEl = document.getElementById(`node-${currentNodeId}`);
+      if (nodeEl) {
+        nodeEl.querySelector('path').setAttribute('fill', '#20c997');
+        nodeEl.querySelector('path').setAttribute('stroke', '#fff');
+      }
+    }
 
-  document.getElementById('res-hashtag').textContent = res.tag;
-  document.getElementById('res-paper-title').textContent = res.title;
-  document.getElementById('res-corner-face').textContent = res.cornerFace;
-  document.getElementById('res-rank').textContent = res.rank;
-  document.getElementById('res-char').textContent = res.char;
-  document.getElementById('res-line1').textContent = res.line1;
-  document.getElementById('res-line2').textContent = res.line2;
+    function renderQuestion() {
+      if (currentStep >= TOTAL_STEPS) {
+        showFinalResult();
+        return;
+      }
 
-  const modal = document.getElementById('result-modal');
-  modal.style.display = 'flex';
-}
+      const q = GAME_DATA.questions[currentStep];
+      document.getElementById('q-number').textContent = `QUESTION ${String(currentStep + 1).padStart(2, '0')}`;
+      document.getElementById('progress-text').textContent = `残り ${TOTAL_STEPS - currentStep} 問`;
+      document.getElementById('q-text').textContent = q.text;
 
-// リセット
-function restartGame() {
-  currentStep = 0;
-  currentLane = 0;
-  document.getElementById('result-modal').style.display = 'none';
-  renderMap();
-  updateUI();
-  document.getElementById('map-scroll-area').scrollTo({ left: 0, behavior: 'smooth' });
-}
+      const choicesBox = document.getElementById('choices-container');
+      choicesBox.innerHTML = '';
 
-// 初回起動
-document.addEventListener('DOMContentLoaded', () => {
-  renderMap();
-  updateUI();
-});
-</script>
+      q.choices.forEach(c => {
+        const card = document.createElement('div');
+        card.className = `choice-card type-${c.type}`;
+        card.innerHTML = `
+          <div class="choice-badge">${c.type}</div>
+          <div class="choice-text">${c.label}</div>
+        `;
+        card.onclick = () => selectChoice(c.type);
+        choicesBox.appendChild(card);
+      });
+    }
 
+    function selectChoice(type) {
+      lastChoiceType = type;
+      const nextStep = currentStep + 1;
+
+      // 最後のステップ（9->10）は必ず0（中央の🔥）へ着地
+      let nextRow = 0;
+      if (nextStep < TOTAL_STEPS) {
+        const candidateRows = STEP_ROWS[nextStep];
+        let idealRow = currentRow;
+        if (type === 'A') idealRow -= 1; // 上へ
+        if (type === 'C') idealRow += 1; // 下へ
+
+        // 最も近い有効な行を選択
+        nextRow = candidateRows.reduce((prev, curr) =>
+          Math.abs(curr - idealRow) < Math.abs(prev - idealRow) ? curr : prev
+        );
+      }
+
+      // エッジのハイライト
+      const edgeId = `edge-${currentStep}_${currentRow}-${nextStep}_${nextRow}`;
+      const edgeEl = document.getElementById(edgeId);
+      if (edgeEl) {
+        edgeEl.setAttribute('stroke', '#20c997');
+        edgeEl.setAttribute('stroke-width', '3');
+        edgeEl.removeAttribute('stroke-dasharray');
+      }
+
+      currentStep = nextStep;
+      currentRow = nextRow;
+
+      updatePlayerPosition();
+
+      if (currentStep < TOTAL_STEPS) {
+        renderQuestion();
+      } else {
+        // 🔥ノード到着後、少し余韻を残して結果画面へ
+        setTimeout(showFinalResult, 600);
+      }
+    }
+
+    // 文字列が画像パスか判定してHTMLを組み立てる関数
+    function renderCharContent(charVal) {
+      if (typeof charVal === 'string' && (charVal.includes('/') || charVal.endsWith('.png') || charVal.endsWith('.jpg') || charVal.endsWith('.webp'))) {
+        return `<img src="${charVal}" alt="character">`;
+      }
+      return charVal;
+    }
+
+    function showFinalResult() {
+      const res = GAME_DATA.results[lastChoiceType] || GAME_DATA.results.A;
+      const modal = document.getElementById('result-modal');
+
+      // 背景色（渦巻きグラデーション）の設定
+      document.getElementById('spiral-bg').style.setProperty('--res-bg-1', res.bgColors[0]);
+      document.getElementById('spiral-bg').style.setProperty('--res-bg-2', res.bgColors[1]);
+
+      // テキスト・装飾の流し込み
+      document.getElementById('res-tag').textContent = res.tag;
+      document.getElementById('res-title').textContent = res.title;
+      document.getElementById('res-corner-face').innerHTML = renderCharContent(res.cornerFace);
+      document.getElementById('res-rank').textContent = res.rank;
+      document.getElementById('res-char').innerHTML = renderCharContent(res.char);
+      document.getElementById('res-line1').textContent = res.line1;
+      document.getElementById('res-line2').textContent = res.line2;
+
+      modal.style.display = 'flex';
+    }
+
+    function restartGame() {
+      location.reload();
+    }
+
+    // 初期化実行
+    window.onload = () => {
+      updatePlayerPosition();
+      renderQuestion();
+    };
+  </script>
 </body>
 </html>
