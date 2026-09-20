@@ -2,92 +2,645 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>タップゲーム</title>
-  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>相性診断クエスト</title>
   <style>
-    body {
+    :root {
+      --bg-color: #f7faf9;
+      --primary: #4ebfa5;
+      --primary-dark: #379883;
+      --accent: #ff6b81;
+      --text-main: #2d3748;
+      --text-muted: #718096;
+      --card-bg: #ffffff;
+      --map-bg: #eef5f3;
+      --line-color: #cbd5e1;
+      --active-line: #4ebfa5;
+    }
+
+    * {
+      box-sizing: border-box;
       margin: 0;
-      font-family: sans-serif;
-      text-align: center;
-      background: #f0f4f8;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
       user-select: none;
       -webkit-user-select: none;
     }
-    #tap-btn {
-      width: 180px;
-      height: 180px;
-      border-radius: 50%;
-      border: none;
-      background: #06c755; /* LINEグリーン */
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    #app-container {
+      width: 100%;
+      max-width: 480px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      background: #ffffff;
+      box-shadow: 0 0 20px rgba(0,0,0,0.05);
+    }
+    
+    /* ヘッダー */
+    header {
+      padding: 12px 16px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #ffffff;
+      border-bottom: 1px solid #edf2f7;
+      z-index: 10;
+    }
+    
+    .status-badge {
+      background: var(--primary);
       color: white;
-      font-size: 24px;
-      font-weight: bold;
-      box-shadow: 0 8px 15px rgba(0,0,0,0.2);
-      cursor: pointer;
-      outline: none;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 12px;
+      letter-spacing: 0.5px;
     }
-    #tap-btn:active {
-      transform: scale(0.95);
+    
+    .counter {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
     }
-    .score-board {
-      font-size: 28px;
-      margin-bottom: 24px;
-      color: #333;
+    
+    /* 上部：マップエリア (t2風) */
+    .map-section {
+      height: 38%;
+      background: var(--map-bg);
+      position: relative;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-behavior: smooth;
+      border-bottom: 2px dashed #d8e5e1;
     }
-    #share-btn {
-      margin-top: 20px;
-      padding: 10px 20px;
-      border: 1px solid #06c755;
-      background: white;
-      color: #06c755;
-      border-radius: 20px;
+    
+    .map-section::-webkit-scrollbar {
       display: none;
+    }
+    
+    #map-svg {
+      display: block;
+      height: 100%;
+    }
+    
+    /* 下部：クイズ＆カードエリア (t1風) */
+    .quiz-section {
+      flex: 1;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: #ffffff;
+    }
+    
+    .question-box {
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 18px 16px;
+      border-left: 6px solid var(--primary);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .question-text {
+      font-size: 17px;
+      font-weight: 700;
+      line-height: 1.45;
+      color: var(--text-main);
+    }
+    
+    .cards-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 12px 0;
+    }
+    
+    .choice-card {
+      background: #ffffff;
+      border: 2px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.03);
+      transition: all 0.15s ease;
+    }
+    
+    .choice-card:active {
+      transform: scale(0.97);
+      background-color: #f0fdf9;
+      border-color: var(--primary);
+    }
+    
+    .card-tag {
+      background: #e2e8f0;
+      color: #64748b;
+      font-weight: 800;
+      font-size: 13px;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+    
+    .choice-card.a .card-tag {
+      background: #e6fcf5;
+      color: var(--primary);
+    }
+    
+    .choice-card.b .card-tag {
+      background: #fff0f3;
+      color: var(--accent);
+    }
+    
+    .card-text {
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.4;
+      flex: 1;
+      color: #334155;
+    }
+    
+    .card-arrow {
+      color: #cbd5e1;
+      font-weight: 800;
+      font-size: 14px;
+      margin-left: 8px;
+    }
+    
+    /* 凡例フッター */
+    .legend-footer {
+      display: flex;
+      justify-content: space-around;
+      padding-top: 8px;
+      border-top: 1px solid #f1f5f9;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    /* 結果モーダル画面 */
+    #result-modal {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.98);
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    
+    .result-badge {
+      font-size: 13px;
+      font-weight: 800;
+      background: #f1f5f9;
+      padding: 6px 16px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+      color: var(--primary-dark);
+    }
+    
+    .result-title {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: var(--text-main);
+    }
+    
+    .result-score {
+      font-size: 48px;
+      font-weight: 900;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+    
+    .result-desc {
+      font-size: 14px;
+      line-height: 1.7;
+      color: #475569;
+      margin-bottom: 30px;
+      max-width: 320px;
+      text-align: left;
+      background: #f8fafc;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    
+    .retry-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 14px 36px;
       font-size: 16px;
+      font-weight: 700;
+      border-radius: 30px;
+      box-shadow: 0 4px 12px rgba(78, 191, 165, 0.4);
+      cursor: pointer;
+    }
+    
+    .retry-btn:active {
+      transform: scale(0.96);
+    }
+    
+    /* マップのノードアニメーション */
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+    .current-node {
+      animation: pulse 1.2s infinite ease-in-out;
+      transform-origin: center;
     }
   </style>
 </head>
 <body>
 
-  <div class="score-board">スコア: <span id="score">0</span></div>
-  <button id="tap-btn">タップ！</button>
-  <button id="share-btn" onclick="shareScore()">友だちに結果を送る</button>
+<div id="app-container">
+  <!-- ヘッダー -->
+  <header>
+    <div class="status-badge">QUESTION MAP</div>
+    <div class="counter" id="question-counter">残り 10 問</div>
+  </header>
 
-  <script>
-    const LIFF_ID = "2011677892-6u2IxJpB"; // 発行されたLIFF IDに置き換え
-    let score = 0;
+  <!-- 上部：マップエリア -->
+  <div class="map-section" id="map-scroll-area">
+    <svg id="map-svg" width="1050" height="240"></svg>
+  </div>
 
-    // LIFF初期化
-    liff.init({ liffId: LIFF_ID }).catch(err => console.error(err));
+  <!-- 下部：クイズカードエリア -->
+  <div class="quiz-section">
+    <div class="question-box">
+      <div class="question-text" id="question-text">読み込み中...</div>
+    </div>
 
-    // タップイベント
-    document.getElementById('tap-btn').addEventListener('click', () => {
-      score++;
-      document.getElementById('score').textContent = score;
+    <div class="cards-container">
+      <div class="choice-card a" onclick="handleChoice('A')">
+        <div class="card-tag">A</div>
+        <div class="card-text" id="choice-a-text">-</div>
+        <div class="card-arrow">▶</div>
+      </div>
+      <div class="choice-card b" onclick="handleChoice('B')">
+        <div class="card-tag">B</div>
+        <div class="card-text" id="choice-b-text">-</div>
+        <div class="card-arrow">▶</div>
+      </div>
+    </div>
+    
+    <div class="legend-footer">
+      <div class="legend-item">☕ 休日・日常</div>
+      <div class="legend-item">❤️ 恋愛・距離感</div>
+      <div class="legend-item">⚡ トラブル・本音</div>
+      <div class="legend-item">👑 最終地点</div>
+    </div>
+  </div>
 
-      if (score >= 10) {
-        document.getElementById('share-btn').style.display = 'inline-block';
+  <!-- リザルト画面（モーダル） -->
+  <div id="result-modal">
+    <div class="result-badge">DIAGNOSIS COMPLETE</div>
+    <div class="result-score" id="result-match-rate">100%</div>
+    <div class="result-title" id="result-title">運命のソウルメイト</div>
+    <div class="result-desc" id="result-desc">テキスト</div>
+    <button class="retry-btn" onclick="restartGame()">もう一度ためす</button>
+  </div>
+</div>
+
+<script>
+  /* ====================================================================
+     設定エリア：質問・選択肢・結果テキストを自由に変更できます
+     ==================================================================== */
+  const GAME_DATA = {
+    // 質問リスト（全10問）
+    // iconType: 'coffee' (☕) | 'heart' (❤️) | 'zap' (⚡)
+    questions: [
+      {
+        id: 1,
+        text: "休日に予定が急になくなったときの気分は？",
+        choiceA: "最高！ベッドから一歩も出ないぞ",
+        choiceB: "暇だな…誰か誘って出かけよう",
+        iconType: "coffee"
+      },
+      {
+        id: 2,
+        text: "LINEの未読が溜まってきたときどうする？",
+        choiceA: "通知バッジが気になるから即レス消化",
+        choiceB: "自分のペースでまとめてゆっくり返す",
+        iconType: "coffee"
+      },
+      {
+        id: 3,
+        text: "気持ちがすれ違ったときの解決方法は？",
+        choiceA: "話し合ってその場で落としどころを見つける",
+        choiceB: "少し時間をおいて頭を冷やしてから話す",
+        iconType: "heart"
+      },
+      {
+        id: 4,
+        text: "旅先で行くお店やスケジュールの決め方は？",
+        choiceA: "SNSで話題の人気店をきっちりリサーチ",
+        choiceB: "現地の路地裏で見つけた直感の良さげな店",
+        iconType: "zap"
+      },
+      {
+        id: 5,
+        text: "友だちやパートナーへのプレゼント選びは？",
+        choiceA: "絶対に外さない実用的な欲しいもの",
+        choiceB: "自分では買わないようなサプライズ感重視",
+        iconType: "heart"
+      },
+      {
+        id: 6,
+        text: "夜中の2時に突然ラーメンが食べたくなったら？",
+        choiceA: "健康と翌朝のことを考えて白湯を飲んで耐える",
+        choiceB: "欲望に負けてコンビニへ走る／即席麺を作る",
+        iconType: "coffee"
+      },
+      {
+        id: 7,
+        text: "映画やドラマを観るときのスタンスは？",
+        choiceA: "考察や伏線をじっくり楽しむ派",
+        choiceB: "ポップコーン片手に気楽に楽しむ派",
+        iconType: "zap"
+      },
+      {
+        id: 8,
+        text: "どちらかと一緒に過ごすなら？",
+        choiceA: "沈黙が続いても全く気まずくない空間",
+        choiceB: "ずっとくだらない話で爆笑できる空間",
+        iconType: "heart"
+      },
+      {
+        id: 9,
+        text: "仕事や作業中に壁にぶつかったら？",
+        choiceA: "自力で調べ尽くしてから相談する",
+        choiceB: "早めに周りに意見を聞いてサクッと解決する",
+        iconType: "zap"
+      },
+      {
+        id: 10,
+        text: "作者と一番一緒にやってみたいことは？",
+        choiceA: "落ち着いたカフェでまったりダラダラ語る",
+        choiceB: "飲み会やレジャーで全力ではしゃぐ",
+        iconType: "heart"
       }
-    });
+    ],
 
-    // LINEメッセージ送信（スコア共有）
-    async function shareScore() {
-      if (liff.isApiAvailable('shareTargetPicker')) {
-        await liff.shareTargetPicker([
-          {
-            type: 'text',
-            text: `タップゲームでスコア ${score}点 を獲得しました！`
-          }
-        ]);
-      } else {
-        alert('共有機能はお使いの環境でサポートされていません。');
+    // 診断結果（3パターン）
+    // score >= 4: matchHigh, score >= -3: matchMid, それ以外: matchLow
+    results: {
+      matchHigh: {
+        title: "運命のソウルメイト",
+        matchRate: "95%",
+        desc: "作者と驚くほど波長が一致しています！休日のテンションも物事の距離感も同じなので、何時間一緒にいても全く疲れない奇跡の相性です。今すぐLINEして仲を深めましょう。"
+      },
+      matchMid: {
+        title: "程よい悪友・ベストバディ",
+        matchRate: "65%",
+        desc: "お互いに違う部分を持ちつつも、それが良い刺激になるバランスの取れた相性！適度な距離感でツッコミを入れ合える、長く付き合える関係です。"
+      },
+      matchLow: {
+        title: "前世で領地を争った宿敵",
+        matchRate: "15%",
+        desc: "考え方や価値観が見事なまでに真逆！しかし「逆だからこそ面白い」のが人間の醍醐味。ツッコミどころ満載で、ある意味一番盛り上がるネタ枠の相性です。"
       }
     }
-  </script>
+  };
+
+  /* ====================================================================
+     ロジック本体
+     ==================================================================== */
+  let currentStep = 0; // 0 〜 9 (全10問)
+  let userScore = 0;   // A = +1, B = -1
+  let currentRouteNode = 0; // マップ上のY座標ノード位置インデックス
+
+  // マップのレイアウト設定
+  const TOTAL_STEPS = 10;
+  const STEP_WIDTH = 95;
+  const HEIGHT = 240;
+  const Y_LEVELS = [60, 120, 180]; // 上・中・下段のY座標
+
+  // マップ構造データ（各ステップごとのノードと接続）
+  const mapNodes = [];
+  const mapLinks = [];
+
+  // マップの自動生成
+  function initMapData() {
+    mapNodes.length = 0;
+    mapLinks.length = 0;
+
+    for (let step = 0; step <= TOTAL_STEPS; step++) {
+      if (step === 0) {
+        // スタート
+        mapNodes.push({ step: 0, level: 1, x: 40, y: Y_LEVELS[1], icon: "🚩", id: "0-1" });
+      } else if (step === TOTAL_STEPS) {
+        // ゴール（3つの結末）
+        [0, 1, 2].forEach(lvl => {
+          mapNodes.push({ step, level: lvl, x: 40 + step * STEP_WIDTH, y: Y_LEVELS[lvl], icon: "👑", id: `${step}-${lvl}` });
+        });
+      } else {
+        // 途中ノード（2〜3分岐）
+        const levels = (step % 2 === 1) ? [0, 2] : [0, 1, 2];
+        const q = GAME_DATA.questions[step - 1];
+        let icon = "☕";
+        if (q.iconType === "heart") icon = "❤️";
+        if (q.iconType === "zap") icon = "⚡";
+    
+        levels.forEach(lvl => {
+          mapNodes.push({ step, level: lvl, x: 40 + step * STEP_WIDTH, y: Y_LEVELS[lvl], icon, id: `${step}-${lvl}` });
+        });
+      }
+    }
+    
+    // ノード間のライン（リンク）を構築
+    for (let step = 0; step < TOTAL_STEPS; step++) {
+      const fromNodes = mapNodes.filter(n => n.step === step);
+      const toNodes = mapNodes.filter(n => n.step === step + 1);
+    
+      fromNodes.forEach(from => {
+        toNodes.forEach(to => {
+          if (Math.abs(from.level - to.level) <= 1) {
+            mapLinks.push({ from, to, active: false });
+          }
+        });
+      });
+    }
+  }
+
+  // マップのSVG描画
+  function renderMap() {
+    const svg = document.getElementById("map-svg");
+    svg.innerHTML = "";
+
+    // 線の描画
+    mapLinks.forEach(link => {
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", link.from.x);
+      line.setAttribute("y1", link.from.y);
+      line.setAttribute("x2", link.to.x);
+      line.setAttribute("y2", link.to.y);
+      line.setAttribute("stroke", link.active ? "var(--active-line)" : "var(--line-color)");
+      line.setAttribute("stroke-width", link.active ? "3.5" : "1.5");
+      line.setAttribute("stroke-dasharray", link.active ? "none" : "4 2");
+      svg.appendChild(line);
+    });
+    
+    // ノードの描画
+    mapNodes.forEach(node => {
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      const isCurrent = (node.step === currentStep && node.level === currentRouteNode);
+    
+      if (isCurrent) {
+        g.setAttribute("class", "current-node");
+      }
+    
+      // 六角形ポリゴン
+      const hex = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+      const size = isCurrent ? 24 : 20;
+      const points = [];
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i;
+        points.push(`${node.x + size * Math.cos(angle)},${node.y + size * Math.sin(angle)}`);
+      }
+      hex.setAttribute("points", points.join(" "));
+      hex.setAttribute("fill", isCurrent ? "#ffffff" : (node.step < currentStep ? "#e2e8f0" : "#ffffff"));
+      hex.setAttribute("stroke", isCurrent ? "var(--primary)" : (node.step < currentStep ? "#94a3b8" : "#cbd5e1"));
+      hex.setAttribute("stroke-width", isCurrent ? "3" : "2");
+      g.appendChild(hex);
+    
+      // アイコンテキスト
+      const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      text.setAttribute("x", node.x);
+      text.setAttribute("y", node.y + 5);
+      text.setAttribute("text-anchor", "middle");
+      text.setAttribute("font-size", isCurrent ? "14" : "12");
+      text.textContent = node.icon;
+      g.appendChild(text);
+    
+      svg.appendChild(g);
+    });
+  }
+
+  // 画面の更新
+  function updateUI() {
+    if (currentStep < TOTAL_STEPS) {
+      const q = GAME_DATA.questions[currentStep];
+      document.getElementById("question-counter").textContent = `残り ${TOTAL_STEPS - currentStep} 問`;
+      document.getElementById("question-text").textContent = q.text;
+      document.getElementById("choice-a-text").textContent = q.choiceA;
+      document.getElementById("choice-b-text").textContent = q.choiceB;
+
+      // 現在位置に合わせてマップを自動スクロール
+      const scrollArea = document.getElementById("map-scroll-area");
+      const currentX = 40 + currentStep * STEP_WIDTH;
+      scrollArea.scrollTo({ left: Math.max(0, currentX - 120), behavior: "smooth" });
+    } else {
+      showResult();
+    }
+    renderMap();
+  }
+
+  // カード選択時の処理
+  function handleChoice(choice) {
+    if (currentStep >= TOTAL_STEPS) return;
+
+    // スコア加算 (Aなら+1, Bなら-1)
+    if (choice === 'A') {
+      userScore += 1;
+    } else {
+      userScore -= 1;
+    }
+    
+    const nextStep = currentStep + 1;
+    const candidates = mapNodes.filter(n => n.step === nextStep && Math.abs(n.level - currentRouteNode) <= 1);
+    
+    // Aなら上側寄り、Bなら下側寄りのノードへ遷移
+    let nextNode = candidates[0];
+    if (choice === 'A') {
+      nextNode = candidates.reduce((prev, curr) => (curr.level < prev.level ? curr : prev), candidates[0]);
+    } else {
+      nextNode = candidates.reduce((prev, curr) => (curr.level > prev.level ? curr : prev), candidates[0]);
+    }
+    
+    // 通ったラインをアクティブにする
+    const link = mapLinks.find(l => l.from.step === currentStep && l.from.level === currentRouteNode && l.to.level === nextNode.level);
+    if (link) link.active = true;
+    
+    currentRouteNode = nextNode.level;
+    currentStep++;
+    
+    updateUI();
+  }
+
+  // 結果表示
+  function showResult() {
+    let res = GAME_DATA.results.matchMid;
+    if (userScore >= 4) {
+      res = GAME_DATA.results.matchHigh;
+    } else if (userScore <= -3) {
+      res = GAME_DATA.results.matchLow;
+    }
+
+    document.getElementById("result-score").textContent = res.matchRate;
+    document.getElementById("result-title").textContent = res.title;
+    document.getElementById("result-desc").textContent = res.desc;
+    document.getElementById("result-modal").style.display = "flex";
+  }
+
+  // リトライ
+  function restartGame() {
+    currentStep = 0;
+    userScore = 0;
+    currentRouteNode = 1;
+    document.getElementById("result-modal").style.display = "none";
+    initMapData();
+    updateUI();
+  }
+
+  // 初回起動
+  window.addEventListener("DOMContentLoaded", () => {
+    initMapData();
+    updateUI();
+  });
+</script>
+
 </body>
 </html>
