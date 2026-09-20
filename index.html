@@ -94,6 +94,7 @@ button { font: inherit; }
 .counter-box {
   font-size: 13px;
   color: #d9d6ed;
+  transition: opacity 0.2s ease;
 }
 .counter-box b {
   color: var(--gold);
@@ -278,9 +279,7 @@ h1 {
 .answer .ans-text { font-size: 13px; font-weight: 700; line-height: 1.35; }
 .answer .spark { margin-left: auto; color: var(--gold); opacity: .7; }
 
-/* =========================================================
-   デザイナー作：結果画面（ferret_compatibility_ui.html準拠）
-   ========================================================= */
+/* 結果発表画面 */
 .result-section {
   min-height: calc(100vh - 60px);
   display: none;
@@ -405,7 +404,8 @@ h1 {
       <span class="logo-badge">💗</span>
       <div><small>今日の作戦会議</small>相性診断マップ</div>
     </div>
-    <div class="counter-box">残り <b id="timer">10</b> 問</div>
+    <!-- カウンター（結果画面では自動で消えます） -->
+    <div class="counter-box" id="header-counter">残り <b id="timer">10</b> 問</div>
   </header>
 
   <!-- クイズプレイ画面 -->
@@ -416,7 +416,7 @@ h1 {
       <p class="subtitle">あなたの直感でルートが変わる。</p>
     </div>
 
-    <!-- マップ（8問目まで5列展開 ➔ 9問目で中央集結 ➔ 10問目🔥） -->
+    <!-- マップ -->
     <section class="map-card" id="map-container">
       <svg id="map-svg"></svg>
       <div id="player-avatar">
@@ -438,7 +438,7 @@ h1 {
     </section>
   </main>
 
-  <!-- 結果発表画面（デザイナーのUIデザインを全結果共通で適用） -->
+  <!-- 結果発表画面 -->
   <section id="result" class="result-section">
     <div class="result-box">
       <div class="stars" id="res-stars">★★★★★</div>
@@ -461,7 +461,7 @@ h1 {
 
 <script>
 /* =========================================================
-   ★ 設定データ（質問文や各結果の文言はここを自由に変更可能）★
+   設定データ
    ========================================================= */
 const GAME_DATA = {
   questions: [
@@ -537,7 +537,6 @@ const GAME_DATA = {
         { label: "夜パフェ・あま〜いスイーツ 🍨", type: "C" }
       ]
     },
-    /* ★第10問：この回答ですべてが決まる！★ */
     {
       text: "【究極の選択】正直、きのこ派？たけのこ派？",
       choices: [
@@ -548,7 +547,6 @@ const GAME_DATA = {
     }
   ],
 
-  /* ★結果画面（A・B・Cいずれもデザイナーの画面で表示）★ */
   results: {
     A: {
       stars: "★★★★★",
@@ -580,9 +578,7 @@ const GAME_DATA = {
   }
 };
 
-/* =========================================================
-   マップ構造（8問目まで5列展開 ➔ 9問目中央集結 ➔ 10問目🔥）
-   ========================================================= */
+/* マップ設定 */
 const TOTAL_STEPS = 10;
 const NODE_SPACING_X = 130;
 const SVG_HEIGHT = 250;
@@ -590,17 +586,17 @@ const CENTER_Y = SVG_HEIGHT / 2;
 const ROW_OFFSET = 38;
 
 const STEP_ROWS = [
-  [0],               // 0: スタート
-  [-1, 0, 1],        // 1
-  [-1, 0, 1],        // 2
-  [-2, -1, 0, 1, 2], // 3（5列）
-  [-2, -1, 0, 1, 2], // 4
-  [-2, -1, 0, 1, 2], // 5
-  [-2, -1, 0, 1, 2], // 6
-  [-2, -1, 0, 1, 2], // 7
-  [-2, -1, 0, 1, 2], // 8（ワイドキープ）
-  [0],               // 9（一斉合流）
-  [0]                // 10（完全収束：🔥ボスノード）
+  [0],
+  [-1, 0, 1],
+  [-1, 0, 1],
+  [-2, -1, 0, 1, 2],
+  [-2, -1, 0, 1, 2],
+  [-2, -1, 0, 1, 2],
+  [-2, -1, 0, 1, 2],
+  [-2, -1, 0, 1, 2],
+  [-2, -1, 0, 1, 2],
+  [0],
+  [0]
 ];
 
 const ICONS_POOL = ["🍾", "💄", "🎀", "💎", "🍓", "💖", "💅", "👑", "🥂"];
@@ -644,7 +640,6 @@ for (let step = 0; step < TOTAL_STEPS; step++) {
   });
 }
 
-/* マップ描画 */
 const svg = document.getElementById('map-svg');
 
 edges.forEach(e => {
@@ -688,7 +683,6 @@ Object.values(nodes).forEach(n => {
   svg.appendChild(g);
 });
 
-/* ゲーム進行 */
 let currentStep = 0;
 let currentRow = 0;
 let lastChoiceType = "B";
@@ -714,11 +708,6 @@ function updatePlayerPosition() {
 }
 
 function renderQuestion() {
-  if (currentStep >= TOTAL_STEPS) {
-    showFinalResult();
-    return;
-  }
-
   const q = GAME_DATA.questions[currentStep];
   document.getElementById('q-num').textContent = `QUESTION ${String(currentStep + 1).padStart(2, '0')}`;
   document.getElementById('timer').textContent = TOTAL_STEPS - currentStep;
@@ -768,6 +757,11 @@ function selectChoice(type) {
   currentStep = nextStep;
   currentRow = nextRow;
 
+  // 10問目回答直後：カウンターを「残り 0 問」に更新し、プログレスバーを満タンにする
+  const remaining = TOTAL_STEPS - currentStep;
+  document.getElementById('timer').textContent = Math.max(0, remaining);
+  document.getElementById('progress-bar').style.width = `${(currentStep / TOTAL_STEPS) * 100}%`;
+
   updatePlayerPosition();
 
   if (currentStep < TOTAL_STEPS) {
@@ -780,19 +774,23 @@ function selectChoice(type) {
 function showFinalResult() {
   const res = GAME_DATA.results[lastChoiceType] || GAME_DATA.results.B;
 
-  // クイズ画面を非表示にし、結果画面を表示
+  // クイズ画面を非表示、結果画面を表示
   document.getElementById('quiz').style.display = 'none';
   const resultScreen = document.getElementById('result');
   resultScreen.classList.add('active');
 
-  // テキストの反映
+  // ★ 修正点：結果画面ではヘッダーのカウンターを消す（完了感を演出）
+  const counterBox = document.getElementById('header-counter');
+  counterBox.style.display = 'none';
+
+  // テキストの反映[cite: 5]
   document.getElementById('res-stars').textContent = res.stars;
   document.getElementById('res-tag').textContent = res.tag;
   document.getElementById('res-title').textContent = res.title;
   document.getElementById('res-rank').textContent = res.rank;
   document.getElementById('res-copy').innerHTML = res.copy;
 
-  // 画像・絵文字の反映
+  // 画像・絵文字の反映[cite: 4, 5]
   const charImg = document.getElementById('res-char-img');
   const fallback = document.getElementById('res-char-fallback');
   if (res.img) {
