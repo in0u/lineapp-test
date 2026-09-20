@@ -402,7 +402,7 @@ h1 {
   <header class="topbar">
     <div class="logo">
       <span class="logo-badge">💗</span>
-      <div><small>今日の作戦会議</small>相性診断マップ</div>
+      <div><small>AIら用</small>相性診断ジャーニー（無料版）</div>
     </div>
     <!-- カウンター（結果画面では自動で消えます） -->
     <div class="counter-box" id="header-counter">残り <b id="timer">10</b> 問</div>
@@ -411,9 +411,9 @@ h1 {
   <!-- クイズプレイ画面 -->
   <main id="quiz" class="screen">
     <div class="hero">
-      <div class="kicker">QUESTION JOURNEY</div>
-      <h1>相性診断マップ</h1>
-      <p class="subtitle">あなたの直感でルートが変わる。</p>
+      <div class="kicker">KYOTO JOURNEY</div>
+      <h1>相性診断ジャーニー</h1>
+      <p class="subtitle">あなたと相性ピッタリな男性は？</p>
     </div>
 
     <!-- マップ -->
@@ -442,16 +442,16 @@ h1 {
   <section id="result" class="result-section">
     <div class="result-box">
       <div class="stars" id="res-stars">★★★★★</div>
-      <div class="result-tag" id="res-tag">#今日の相性診断</div>
+      <div class="result-tag" id="res-tag">#あなたと相性ぴったりの男性は…</div>
       <div class="result-avatar">
         <img id="res-char-img" src="images/player.png" onerror="this.style.display='none'; document.getElementById('res-char-fallback').style.display='block';" alt="result">
         <span id="res-char-fallback" class="char-fallback" style="display:none;">✨</span>
       </div>
-      <div class="result-title" id="res-title">相性絶望</div>
-      <div class="result-rank" id="res-rank">【相性度 0% / 大凶】</div>
+      <div class="result-title" id="res-title">最高の相性だよ！</div>
+      <div class="result-rank" id="res-rank">【相性度 100%】</div>
       <p class="result-copy" id="res-copy">
-        相性0%！前世からの宿敵！<br>
-        絶対に分かり合えない関係…でも逆にネタとして一番盛り上がるかも！？
+        相性100%！前世からの運命の人！<br>
+        最高にわかり合える関係…もうあなたなしじゃ生きられない！？
       </p>
       <button class="cta" onclick="restartGame()">もう一度診断する ✨</button>
     </div>
@@ -538,11 +538,11 @@ const GAME_DATA = {
       ]
     },
     {
-      text: "【究極の選択】正直、きのこ派？たけのこ派？",
+      text: "どんなち◯こが好み？",
       choices: [
-        { label: "絶対にきのこの山！ 🍄", type: "A" },
-        { label: "愚問、たけのこの里一択！ 🎍", type: "B" },
-        { label: "アルフォートしか勝たん 🍫", type: "C" }
+        { label: "そりゃ大きいほうが好き！🍄", type: "A" },
+        { label: "硬ければいいかも！🎍", type: "B" },
+        { label: "愛があれば！なんでもOK 🥩", type: "C" }
       ]
     }
   ],
@@ -550,30 +550,30 @@ const GAME_DATA = {
   results: {
     A: {
       stars: "★★★★★",
-      tag: "#今日の相性診断",
-      title: "運命のソウルメイト",
-      rank: "【相性度 120% / 大吉】",
-      img: "images/player.png",
+      tag: "#巨根伝説",
+      title: "タイチ・ミノタウロス",
+      rank: "【相性度 120%】",
+      img: "images/r3.png",
       fallbackEmoji: "🐼",
-      copy: "奇跡のシンクロ率！ノリも笑いのツボも完全一致。<br>前世から双子レベルで分かり合える最高のパートナーです！"
+      copy: "奇跡のシンクロ率！巨根しか勝たん！<br>道鏡を超えた最高のパートナーです！"
     },
     B: {
-      stars: "★☆☆☆☆",
-      tag: "#今日の相性診断",
-      title: "相性絶望",
-      rank: "【相性度 0% / 大凶】",
-      img: "images/player.png",
+      stars: "★★★☆☆",
+      tag: "#in0uさん",
+      title: "相性バッチリ",
+      rank: "【相性度 65%】",
+      img: "images/r1.png",
       fallbackEmoji: "👿",
-      copy: "相性0%！前世からの宿敵！<br>絶対に分かり合えない関係…でも逆にネタとして一番盛り上がるかも！？"
+      copy: "適度な距離感が心地いい大人な関係！<br>年に1回ふらっと飲みに行くと一番楽しい、程よいビジネス仲間です。"
     },
     C: {
       stars: "★★★☆☆",
-      tag: "#今日の相性診断",
-      title: "微妙な相性",
-      rank: "【相性度 60% / 中吉】",
-      img: "images/player.png",
+      tag: "#hiroさん",
+      title: "相性バッチリ",
+      rank: "【相性度 60%】",
+      img: "images/r2.png",
       fallbackEmoji: "🗿",
-      copy: "適度な距離感が心地いい大人な関係！<br>年に1回ふらっと飲みに行くと一番楽しい、程よいビジネス仲間です。"
+      copy: "無限の優しさホールド！<br>最強のアルカイックスマイルで貴方のすべてを包み込む"
     }
   }
 };
