@@ -44,6 +44,16 @@ button { font: inherit; }
     radial-gradient(circle at 88% 12%, rgba(139,108,255,.22), transparent 27%),
     linear-gradient(160deg, #101124 0%, #18162f 55%, #24152e 100%);
 }
+.app:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .15;
+  background-image: radial-gradient(#fff 1px, transparent 1px);
+  background-size: 27px 27px;
+  mask-image: linear-gradient(to bottom, black, transparent 75%);
+}
 
 /* トップバー */
 .topbar {
@@ -91,7 +101,7 @@ button { font: inherit; }
   margin-left: 4px;
 }
 
-/* クイズ画面 */
+/* 画面共通 */
 .screen {
   position: relative;
   z-index: 1;
@@ -121,7 +131,7 @@ h1 {
   font-size: 12px;
 }
 
-/* マップカード */
+/* マップカード（8問目まで5列展開 ➔ 9問目で中央集結 ➔ 10問目🔥） */
 .map-card {
   position: relative;
   border: 1px solid rgba(255,255,255,.12);
@@ -269,169 +279,120 @@ h1 {
 .answer .spark { margin-left: auto; color: var(--gold); opacity: .7; }
 
 /* =========================================================
-   結果画面モーダル（t3デザインの完全再現）
+   デザイナー作：結果画面（ferret_compatibility_ui.html準拠）
    ========================================================= */
-#result-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
+.result-section {
+  min-height: calc(100vh - 60px);
   display: none;
-  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  padding: 35px 20px 25px;
-  overflow: hidden;
-  animation: modalFadeIn 0.4s ease forwards;
-}
-@keyframes modalFadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-/* ぐるぐる渦巻きアニメーション背景 */
-.spiral-bg {
-  position: absolute;
-  inset: -100%;
-  width: 300%;
-  height: 300%;
-  background: repeating-conic-gradient(
-    var(--res-bg-1, #e53e3e) 0deg 15deg,
-    var(--res-bg-2, #721c24) 15deg 30deg
-  );
-  animation: rotateSpiral 22s linear infinite;
-  z-index: 1;
-}
-@keyframes rotateSpiral {
-  100% { transform: rotate(360deg); }
-}
-
-/* 上部：ちぎり紙風バナー */
-.paper-banner {
+  justify-content: center;
+  padding: 24px 16px 40px;
   position: relative;
   z-index: 10;
-  background: #ffffff;
-  padding: 10px 28px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-  border-radius: 4px;
-  transform: rotate(-3deg);
-  border: 2px dashed #333333;
+}
+.result-section.active {
+  display: flex;
+}
+.result-box {
+  width: min(640px, 100%);
   text-align: center;
-  max-width: 90%;
-}
-.paper-banner .tag {
-  color: #2b8a3e;
-  font-size: 15px;
-  font-weight: 900;
-  letter-spacing: 1px;
-}
-.paper-banner .main-title {
-  font-size: 26px;
-  font-weight: 900;
-  color: #1a1a1a;
-  margin-top: 2px;
-}
-.corner-face {
-  position: absolute;
-  right: -20px;
-  top: -24px;
-  font-size: 38px;
-  transform: rotate(12deg);
-}
-
-/* 中央：満月サークル ＋ キャラ ＋ 特大フチ文字 */
-.character-area {
   position: relative;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  padding: 34px 22px 38px;
+  border-radius: 36px;
+  background: linear-gradient(160deg, rgba(45,35,72,.95), rgba(20,20,40,.96));
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 30px 100px rgba(0,0,0,.55);
 }
-.rank-text {
+.result-box:before {
+  content: "";
   position: absolute;
-  top: -32px;
-  left: -24px;
-  font-size: 44px;
-  font-weight: 900;
-  color: #ffffff;
-  -webkit-text-stroke: 3px #000000;
-  text-shadow: 4px 4px 0 #000000;
-  transform: rotate(-10deg);
-  z-index: 15;
-  white-space: nowrap;
+  inset: -2px;
+  border-radius: 38px;
+  padding: 2px;
+  background: linear-gradient(120deg, transparent 15%, rgba(255,79,163,.75), rgba(255,215,106,.7), transparent 75%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
-.yellow-circle {
-  width: 210px;
-  height: 210px;
-  background: radial-gradient(circle, #fff3bf 55%, #ffd43b 100%);
+.stars {
+  font-size: 20px;
+  letter-spacing: .35em;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+.result-tag {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: rgba(255,79,163,.15);
+  border: 1px solid rgba(255,79,163,.35);
+  color: #ff9acb;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .15em;
+}
+.result-avatar {
+  width: 150px;
+  height: 150px;
+  margin: 18px auto 12px;
   border-radius: 50%;
+  padding: 6px;
+  background: linear-gradient(145deg, #fff1a8, #ff63aa, #8b6cff);
+  box-shadow: 0 0 0 6px rgba(255,255,255,.06), 0 0 45px rgba(255,79,163,.45);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-  border: 4px solid #ffffff;
   overflow: hidden;
 }
-.main-character {
+.result-avatar img {
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: charPulse 1.2s infinite alternate ease-in-out;
+  border-radius: 50%;
+  object-fit: cover;
 }
-.main-character img {
-  width: 85%;
-  height: 85%;
-  object-fit: contain;
+.result-avatar .char-fallback {
+  font-size: 75px;
 }
-.main-character .char-emoji {
-  font-size: 90px;
+.result-title {
+  font-size: clamp(26px, 5vw, 40px);
+  font-weight: 1000;
+  margin: 8px 0 4px;
+  background: linear-gradient(90deg, #fff, #ffd2e9, #ffd76a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
-@keyframes charPulse {
-  0% { transform: scale(1); }
-  100% { transform: scale(1.05); }
-}
-
-/* 下部：黒フチ極太文字＆リトライボタン */
-.result-footer-text {
-  position: relative;
-  z-index: 10;
-  text-align: center;
-}
-.impact-text-1 {
-  font-size: 21px;
+.result-rank {
+  font-size: 15px;
   font-weight: 900;
-  color: #ffea00;
-  -webkit-text-stroke: 2px #000000;
-  text-shadow: 3px 3px 0 #000000;
-  margin-bottom: 4px;
+  color: var(--gold);
+  margin-bottom: 12px;
+  letter-spacing: .1em;
 }
-.impact-text-2 {
-  font-size: 19px;
-  font-weight: 900;
-  color: #ffffff;
-  -webkit-text-stroke: 2px #000000;
-  text-shadow: 3px 3px 0 #000000;
+.result-copy {
+  color: #c9c7da;
+  font-size: 14px;
+  line-height: 1.8;
+  max-width: 90%;
+  margin: 0 auto;
 }
-.retry-btn {
-  position: relative;
-  z-index: 10;
-  margin-top: 14px;
-  background: #ffffff;
-  border: 3px solid #000000;
-  color: #000000;
-  font-size: 16px;
+.cta {
+  margin-top: 24px;
+  border: 0;
+  border-radius: 999px;
+  padding: 14px 40px;
   font-weight: 900;
-  padding: 10px 34px;
-  border-radius: 30px;
-  box-shadow: 0 5px 0 #000000;
+  font-size: 15px;
+  color: #2a1830;
+  background: linear-gradient(100deg, #ffd76a, #ff83bd);
+  box-shadow: 0 10px 30px rgba(255,79,163,.3);
   cursor: pointer;
-  outline: none;
+  transition: .15s;
 }
-.retry-btn:active {
-  transform: translateY(3px);
-  box-shadow: 0 2px 0 #000000;
+.cta:active {
+  transform: translateY(2px);
+  box-shadow: 0 4px 15px rgba(255,79,163,.2);
 }
 </style>
 </head>
@@ -455,7 +416,7 @@ h1 {
       <p class="subtitle">あなたの直感でルートが変わる。</p>
     </div>
 
-    <!-- マップ（8問目まで5列展開 ➔ 9問目中央集結 ➔ 10問目🔥） -->
+    <!-- マップ（8問目まで5列展開 ➔ 9問目で中央集結 ➔ 10問目🔥） -->
     <section class="map-card" id="map-container">
       <svg id="map-svg"></svg>
       <div id="player-avatar">
@@ -477,41 +438,30 @@ h1 {
     </section>
   </main>
 
-  <!-- 結果発表画面（t3の渦巻き＆極太フチ文字デザインを完全再現） -->
-  <div id="result-modal">
-    <div class="spiral-bg" id="spiral-bg"></div>
-
-    <!-- 上部ちぎり紙バナー -->
-    <div class="paper-banner">
-      <div class="tag" id="res-tag">#きょうの占い</div>
-      <div class="main-title" id="res-title">相性診断</div>
-      <div class="corner-face" id="res-corner-face">😱</div>
-    </div>
-
-    <!-- 中央：サークル ＋ キャラ ＋ 特大判定文字 -->
-    <div class="character-area">
-      <div class="rank-text" id="res-rank">相性絶望</div>
-      <div class="yellow-circle">
-        <div class="main-character" id="res-char-container">
-          <img id="res-char-img" src="images/player.png" onerror="this.style.display='none'; document.getElementById('res-char-fallback').style.display='block';" alt="result">
-          <span id="res-char-fallback" class="char-emoji" style="display:none;">👿</span>
-        </div>
+  <!-- 結果発表画面（デザイナーのUIデザインを全結果共通で適用） -->
+  <section id="result" class="result-section">
+    <div class="result-box">
+      <div class="stars" id="res-stars">★★★★★</div>
+      <div class="result-tag" id="res-tag">#今日の相性診断</div>
+      <div class="result-avatar">
+        <img id="res-char-img" src="images/player.png" onerror="this.style.display='none'; document.getElementById('res-char-fallback').style.display='block';" alt="result">
+        <span id="res-char-fallback" class="char-fallback" style="display:none;">✨</span>
       </div>
+      <div class="result-title" id="res-title">相性絶望</div>
+      <div class="result-rank" id="res-rank">【相性度 0% / 大凶】</div>
+      <p class="result-copy" id="res-copy">
+        相性0%！前世からの宿敵！<br>
+        絶対に分かり合えない関係…でも逆にネタとして一番盛り上がるかも！？
+      </p>
+      <button class="cta" onclick="restartGame()">もう一度診断する ✨</button>
     </div>
-
-    <!-- 下部：黒フチ袋文字＆リトライ -->
-    <div class="result-footer-text">
-      <div class="impact-text-1" id="res-line1">相性0%！奇跡のすれ違い！</div>
-      <div class="impact-text-2" id="res-line2">〜前世からの宿敵〜</div>
-      <button class="retry-btn" onclick="restartGame()">もう一度占う ✨</button>
-    </div>
-  </div>
+  </section>
 
 </div>
 
 <script>
 /* =========================================================
-   ★ ゲームデータ（質問・選択肢・結果文言・色設定）★
+   ★ 設定データ（質問文や各結果の文言はここを自由に変更可能）★
    ========================================================= */
 const GAME_DATA = {
   questions: [
@@ -587,7 +537,7 @@ const GAME_DATA = {
         { label: "夜パフェ・あま〜いスイーツ 🍨", type: "C" }
       ]
     },
-    /* ★オチの第10問：この回答で全ての結果が決まる！★ */
+    /* ★第10問：この回答ですべてが決まる！★ */
     {
       text: "【究極の選択】正直、きのこ派？たけのこ派？",
       choices: [
@@ -598,40 +548,34 @@ const GAME_DATA = {
     }
   ],
 
-  /* ★結果画面の設定（文言・画像・背景グラデーション）★ */
+  /* ★結果画面（A・B・Cいずれもデザイナーの画面で表示）★ */
   results: {
     A: {
+      stars: "★★★★★",
       tag: "#今日の相性診断",
-      title: "パンパン相性",
-      cornerFace: "🤩",
-      rank: "大吉",
+      title: "運命のソウルメイト",
+      rank: "【相性度 120% / 大吉】",
       img: "images/player.png",
       fallbackEmoji: "🐼",
-      bgColors: ["#ff7597", "#f783ac"], // ピンク渦巻き
-      line1: "奇跡のシンクロ率120%！",
-      line2: "〜前世は双子のパンダ〜"
+      copy: "奇跡のシンクロ率！ノリも笑いのツボも完全一致。<br>前世から双子レベルで分かり合える最高のパートナーです！"
     },
     B: {
+      stars: "★☆☆☆☆",
       tag: "#今日の相性診断",
-      title: "相性診断",
-      cornerFace: "😱",
-      rank: "相性絶望", // ★「相性絶望」大凶演出
+      title: "相性絶望",
+      rank: "【相性度 0% / 大凶】",
       img: "images/player.png",
       fallbackEmoji: "👿",
-      bgColors: ["#e53e3e", "#721c24"], // 赤×暗黒の絶望渦巻き
-      line1: "相性0%！前世からの宿敵！",
-      line2: "〜絶対に分かり合えない関係〜"
+      copy: "相性0%！前世からの宿敵！<br>絶対に分かり合えない関係…でも逆にネタとして一番盛り上がるかも！？"
     },
     C: {
+      stars: "★★★☆☆",
       tag: "#今日の相性診断",
-      title: "相性診断",
-      cornerFace: "🥂",
-      rank: "中吉",
+      title: "微妙な相性",
+      rank: "【相性度 60% / 中吉】",
       img: "images/player.png",
       fallbackEmoji: "🗿",
-      bgColors: ["#b197fc", "#7950f2"], // 紫渦巻き
-      line1: "相性60%！程よいビジネス仲間！",
-      line2: "〜年に1回会えば十分な距離感〜"
+      copy: "適度な距離感が心地いい大人な関係！<br>年に1回ふらっと飲みに行くと一番楽しい、程よいビジネス仲間です。"
     }
   }
 };
@@ -649,7 +593,7 @@ const STEP_ROWS = [
   [0],               // 0: スタート
   [-1, 0, 1],        // 1
   [-1, 0, 1],        // 2
-  [-2, -1, 0, 1, 2], // 3
+  [-2, -1, 0, 1, 2], // 3（5列）
   [-2, -1, 0, 1, 2], // 4
   [-2, -1, 0, 1, 2], // 5
   [-2, -1, 0, 1, 2], // 6
@@ -700,9 +644,7 @@ for (let step = 0; step < TOTAL_STEPS; step++) {
   });
 }
 
-/* =========================================================
-   マップ描画（SVG）
-   ========================================================= */
+/* マップ描画 */
 const svg = document.getElementById('map-svg');
 
 edges.forEach(e => {
@@ -730,7 +672,7 @@ Object.values(nodes).forEach(n => {
   rect.setAttribute("width", "36");
   rect.setAttribute("height", "36");
   rect.setAttribute("rx", "12");
-  rect.setAttribute("fill", n.step === TOTAL_STEPS ? "#ff5b95" : "#1d1d38");
+  rect.setAttribute("fill", n.step === TOTAL_STEPS ? "linear-gradient(145deg,#ff5b95,#ff7b56)" : "#1d1d38");
   rect.setAttribute("stroke", n.step === TOTAL_STEPS ? "#ffd4e5" : "rgba(255,255,255,0.18)");
   rect.setAttribute("stroke-width", "1.5");
   g.appendChild(rect);
@@ -746,12 +688,10 @@ Object.values(nodes).forEach(n => {
   svg.appendChild(g);
 });
 
-/* =========================================================
-   ゲーム進行ロジック
-   ========================================================= */
+/* ゲーム進行 */
 let currentStep = 0;
 let currentRow = 0;
-let lastChoiceType = "B"; // デフォルト
+let lastChoiceType = "B";
 
 function updatePlayerPosition() {
   const currentNodeId = `${currentStep}_${currentRow}`;
@@ -839,20 +779,20 @@ function selectChoice(type) {
 
 function showFinalResult() {
   const res = GAME_DATA.results[lastChoiceType] || GAME_DATA.results.B;
-  const modal = document.getElementById('result-modal');
 
-  // 背景の渦巻き色を設定
-  document.getElementById('spiral-bg').style.setProperty('--res-bg-1', res.bgColors[0]);
-  document.getElementById('spiral-bg').style.setProperty('--res-bg-2', res.bgColors[1]);
+  // クイズ画面を非表示にし、結果画面を表示
+  document.getElementById('quiz').style.display = 'none';
+  const resultScreen = document.getElementById('result');
+  resultScreen.classList.add('active');
 
-  // 上部ちぎり紙バナー
+  // テキストの反映
+  document.getElementById('res-stars').textContent = res.stars;
   document.getElementById('res-tag').textContent = res.tag;
   document.getElementById('res-title').textContent = res.title;
-  document.getElementById('res-corner-face').textContent = res.cornerFace;
-
-  // 中央：特大フチ文字とキャラ
   document.getElementById('res-rank').textContent = res.rank;
+  document.getElementById('res-copy').innerHTML = res.copy;
 
+  // 画像・絵文字の反映
   const charImg = document.getElementById('res-char-img');
   const fallback = document.getElementById('res-char-fallback');
   if (res.img) {
@@ -864,13 +804,6 @@ function showFinalResult() {
     fallback.style.display = 'block';
     fallback.textContent = res.fallbackEmoji;
   }
-
-  // 下部：黒フチ袋文字
-  document.getElementById('res-line1').textContent = res.line1;
-  document.getElementById('res-line2').textContent = res.line2;
-
-  // モーダル表示
-  modal.style.display = 'flex';
 }
 
 function restartGame() {
