@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>相性診断マップ</title>
+<title>相性診断ジャーニー</title>
 <style>
 :root {
   --bg: #111225;
@@ -23,6 +23,7 @@
   margin: 0;
   padding: 0;
   -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 html, body {
   min-height: 100%;
@@ -33,7 +34,7 @@ html, body {
   user-select: none;
   -webkit-user-select: none;
 }
-button { font: inherit; }
+button { font: inherit; outline: none; }
 
 .app {
   min-height: 100vh;
@@ -94,7 +95,7 @@ button { font: inherit; }
 .counter-box {
   font-size: 13px;
   color: #d9d6ed;
-  transition: opacity 0.2s ease;
+  display: none;
 }
 .counter-box b {
   color: var(--gold);
@@ -111,11 +112,124 @@ button { font: inherit; }
   padding: 14px 16px 36px;
 }
 
+/* タイトル画面 */
+.title-section {
+  min-height: calc(100vh - 60px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px 40px;
+  position: relative;
+  z-index: 10;
+}
+.title-box {
+  width: min(580px, 100%);
+  text-align: center;
+  position: relative;
+  padding: 36px 20px 38px;
+  border-radius: 36px;
+  background: linear-gradient(160deg, rgba(45,35,72,.95), rgba(20,20,40,.96));
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 30px 100px rgba(0,0,0,.55);
+}
+.title-box:before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 38px;
+  padding: 2px;
+  background: linear-gradient(120deg, transparent 15%, rgba(255,79,163,.75), rgba(255,215,106,.7), transparent 75%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.title-kicker {
+  font-size: 11px;
+  letter-spacing: .25em;
+  color: var(--pink2);
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+.main-game-title {
+  font-size: clamp(24px, 5vw, 36px);
+  font-weight: 1000;
+  margin-bottom: 6px;
+  background: linear-gradient(90deg, #fff, #ffd2e9, #ffd76a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.title-avatar {
+  width: 140px;
+  height: 140px;
+  margin: 16px auto 14px;
+  border-radius: 50%;
+  padding: 6px;
+  background: linear-gradient(145deg, #fff1a8, #ff63aa, #8b6cff);
+  box-shadow: 0 0 0 6px rgba(255,255,255,.06), 0 0 45px rgba(255,79,163,.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  animation: titlePulse 1.8s infinite alternate ease-in-out;
+}
+@keyframes titlePulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.05); }
+}
+.title-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.title-avatar .char-fallback {
+  font-size: 70px;
+}
+.rules-card {
+  margin: 14px auto 6px;
+  padding: 14px 18px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  font-size: 13px;
+  color: #ddd9e8;
+  line-height: 1.65;
+  text-align: left;
+  max-width: 90%;
+}
+.rules-card ul {
+  padding-left: 18px;
+  margin-top: 4px;
+}
+.rules-card li {
+  margin-bottom: 4px;
+}
+.start-btn {
+  margin-top: 20px;
+  border: 0;
+  border-radius: 999px;
+  padding: 15px 46px;
+  font-weight: 900;
+  font-size: 17px;
+  color: #2a1830;
+  background: linear-gradient(100deg, #ffd76a, #ff83bd);
+  box-shadow: 0 10px 30px rgba(255,79,163,.35);
+  cursor: pointer;
+  transition: .15s;
+}
+.start-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 4px 15px rgba(255,79,163,.2);
+}
+
+/* クイズ・プレイ画面 */
 .hero {
   text-align: center;
   margin: 4px 0 14px;
 }
-.kicker {
+.hero .kicker {
   font-size: 10px;
   letter-spacing: .24em;
   color: var(--pink2);
@@ -132,7 +246,7 @@ h1 {
   font-size: 12px;
 }
 
-/* マップカード（8問目まで5列展開 ➔ 9問目で中央集結 ➔ 10問目🔥） */
+/* マップカード */
 .map-card {
   position: relative;
   border: 1px solid rgba(255,255,255,.12);
@@ -234,7 +348,7 @@ h1 {
   line-height: 1.45;
 }
 
-/* 選択肢ボタン */
+/* 選択肢ボタン（フォーカス残留防止・クリア仕様） */
 .answers {
   display: grid;
   gap: 10px;
@@ -253,15 +367,19 @@ h1 {
   background: linear-gradient(100deg, rgba(255,255,255,.075), rgba(255,255,255,.035));
   text-align: left;
   cursor: pointer;
-  transition: .18s;
   box-shadow: 0 7px 20px rgba(0,0,0,.16);
+  outline: none;
+  -webkit-touch-callout: none;
 }
-.answer:active, .answer:hover {
+
+/* スマホでのフォーカス残留を防止（activeのみで反応） */
+.answer:active {
   transform: translateY(-2px);
   border-color: rgba(255,79,163,.6);
   background: linear-gradient(100deg, rgba(255,79,163,.18), rgba(139,108,255,.12));
   box-shadow: 0 10px 25px rgba(255,79,163,.12);
 }
+
 .answer .letter {
   width: 32px;
   height: 32px;
@@ -404,12 +522,38 @@ h1 {
       <span class="logo-badge">💗</span>
       <div><small>AIら用</small>相性診断ジャーニー（無料版）</div>
     </div>
-    <!-- カウンター（結果画面では自動で消えます） -->
     <div class="counter-box" id="header-counter">残り <b id="timer">10</b> 問</div>
   </header>
 
+  <!-- タイトル画面 -->
+  <section id="title-screen" class="title-section">
+    <div class="title-box">
+      <div class="title-kicker">COMPATIBILITY JOURNEY</div>
+      <h1 class="main-game-title">相性診断ジャーニー</h1>
+      <p class="subtitle">あなたと相性ピッタリな男性は一体だれ…？</p>
+
+      <!-- フェレットアイコン[cite: 4] -->
+      <div class="title-avatar">
+        <img id="title-img" src="images/player.png" onerror="this.style.display='none'; document.getElementById('title-fallback').style.display='block';" alt="ferret">
+        <span id="title-fallback" class="char-fallback" style="display:none;">🐾</span>
+      </div>
+
+      <!-- ゲーム説明 -->
+      <div class="rules-card">
+        <strong>✨ あそびかた</strong>
+        <ul>
+          <li>直感で3択の質問に答えていくだけ！</li>
+          <li>選んだ答えによってルートが分岐するローグライクマップ🗺️</li>
+          <li>全10問の旅の果てに、運命の相性結果が暴かれます…🔥</li>
+        </ul>
+      </div>
+
+      <button class="start-btn" onclick="startGame()">診断スタート ✨</button>
+    </div>
+  </section>
+
   <!-- クイズプレイ画面 -->
-  <main id="quiz" class="screen">
+  <main id="quiz" class="screen" style="display: none;">
     <div class="hero">
       <div class="kicker">KYOTO JOURNEY</div>
       <h1>相性診断ジャーニー</h1>
@@ -538,14 +682,15 @@ const GAME_DATA = {
       ]
     },
     {
-      text: "どんなち◯こが好み？",
+      text: "どんなチ◯コが好み？",
       choices: [
-        { label: "そりゃ大きいほうが好き！🍄", type: "A" },
-        { label: "硬ければいいかも！🎍", type: "B" },
-        { label: "愛があれば！なんでもOK 🥩", type: "C" }
+        { label: "とにかく大きいやつ！🍄", type: "A" },
+        { label: "カチカチなのが好き！🎍", type: "B" },
+        { label: "愛があればなんでもOK！ 🥩", type: "C" }
       ]
     }
   ],
+
 
   results: {
     A: {
@@ -555,25 +700,25 @@ const GAME_DATA = {
       rank: "【相性度 120%】",
       img: "images/r3.png",
       fallbackEmoji: "🐼",
-      copy: "奇跡のシンクロ率！巨根しか勝たん！<br>道鏡を超えた最高のパートナーです！"
+      copy: "奇跡のシンクロ率！巨根しか勝たん！<br>すべてを超越したビッグマンです！"
     },
     B: {
-      stars: "★★★☆☆",
-      tag: "#in0uさん",
-      title: "相性バッチリ",
-      rank: "【相性度 65%】",
+      stars: "★★★★☆",
+      tag: "#ド本命",
+      title: "in0uさん",
+      rank: "【相性度 80%】",
       img: "images/r1.png",
       fallbackEmoji: "👿",
-      copy: "適度な距離感が心地いい大人な関係！<br>年に1回ふらっと飲みに行くと一番楽しい、程よいビジネス仲間です。"
+      copy: "適度な距離感が心地いい大人な関係！<br>年に1回ふらっと飲みに行くと一番楽しい、最高のパートナーです"
     },
     C: {
       stars: "★★★☆☆",
-      tag: "#hiroさん",
-      title: "相性バッチリ",
+      tag: "#相性バッチリ",
+      title: "hiroさん",
       rank: "【相性度 60%】",
       img: "images/r2.png",
       fallbackEmoji: "🗿",
-      copy: "無限の優しさホールド！<br>最強のアルカイックスマイルで貴方のすべてを包み込む"
+      copy: "無限の優しさホールド！<br>最強のアルカイックスマイルで貴方のすべてを包み込む。もう何でもいい"
     }
   }
 };
@@ -687,6 +832,15 @@ let currentStep = 0;
 let currentRow = 0;
 let lastChoiceType = "B";
 
+function startGame() {
+  document.getElementById('title-screen').style.display = 'none';
+  document.getElementById('quiz').style.display = 'block';
+  document.getElementById('header-counter').style.display = 'block';
+
+  updatePlayerPosition();
+  renderQuestion();
+}
+
 function updatePlayerPosition() {
   const currentNodeId = `${currentStep}_${currentRow}`;
   const node = nodes[currentNodeId];
@@ -715,6 +869,7 @@ function renderQuestion() {
   document.getElementById('q-text').textContent = q.text;
 
   const choicesBox = document.getElementById('choices-container');
+  // 一旦中身を空にしてフォーカスをリセット
   choicesBox.innerHTML = '';
 
   q.choices.forEach(c => {
@@ -725,7 +880,13 @@ function renderQuestion() {
       <div class="ans-text">${c.label}</div>
       <div class="spark">✦</div>
     `;
-    btn.onclick = () => selectChoice(c.type);
+    btn.onclick = (e) => {
+      // タップされた要素のフォーカスを即座に解除
+      if (document.activeElement) {
+        document.activeElement.blur();
+      }
+      selectChoice(c.type);
+    };
     choicesBox.appendChild(btn);
   });
 }
@@ -757,7 +918,6 @@ function selectChoice(type) {
   currentStep = nextStep;
   currentRow = nextRow;
 
-  // 10問目回答直後：カウンターを「残り 0 問」に更新し、プログレスバーを満タンにする
   const remaining = TOTAL_STEPS - currentStep;
   document.getElementById('timer').textContent = Math.max(0, remaining);
   document.getElementById('progress-bar').style.width = `${(currentStep / TOTAL_STEPS) * 100}%`;
@@ -774,23 +934,19 @@ function selectChoice(type) {
 function showFinalResult() {
   const res = GAME_DATA.results[lastChoiceType] || GAME_DATA.results.B;
 
-  // クイズ画面を非表示、結果画面を表示
   document.getElementById('quiz').style.display = 'none';
   const resultScreen = document.getElementById('result');
   resultScreen.classList.add('active');
 
-  // ★ 修正点：結果画面ではヘッダーのカウンターを消す（完了感を演出）
   const counterBox = document.getElementById('header-counter');
   counterBox.style.display = 'none';
 
-  // テキストの反映[cite: 5]
   document.getElementById('res-stars').textContent = res.stars;
   document.getElementById('res-tag').textContent = res.tag;
   document.getElementById('res-title').textContent = res.title;
   document.getElementById('res-rank').textContent = res.rank;
   document.getElementById('res-copy').innerHTML = res.copy;
 
-  // 画像・絵文字の反映[cite: 4, 5]
   const charImg = document.getElementById('res-char-img');
   const fallback = document.getElementById('res-char-fallback');
   if (res.img) {
@@ -807,11 +963,6 @@ function showFinalResult() {
 function restartGame() {
   location.reload();
 }
-
-window.onload = () => {
-  updatePlayerPosition();
-  renderQuestion();
-};
 </script>
 </body>
 </html>
