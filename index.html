@@ -70,7 +70,7 @@
     }
     #map-svg {
       height: 100%;
-      min-width: 1400px;
+      min-width: 1450px;
       display: block;
     }
 
@@ -491,7 +491,7 @@
           title: "パンパン相性",
           cornerFace: "🤩",
           rank: "大吉",
-          char: "🐼", /* "images/panda.png" のように画像パスでもOK */
+          char: "🐼",
           bgColors: ["#48bb78", "#38a169"],
           line1: "奇跡のシンクロ率120%！",
           line2: "〜前世は双子のパンダ〜"
@@ -501,7 +501,7 @@
           title: "相性絶望",
           cornerFace: "😱",
           rank: "大凶",
-          char: "👿", /* "images/devil.png" など */
+          char: "👿",
           bgColors: ["#e53e3e", "#c53030"],
           line1: "相性0%！前世からの宿敵！",
           line2: "〜絶対に分かり合えない関係〜"
@@ -511,7 +511,7 @@
           title: "微妙な相性",
           cornerFace: "🫠",
           rank: "中吉",
-          char: "🗿", /* "images/moai.png" など */
+          char: "🗿",
           bgColors: ["#805ad5", "#6b46c1"],
           line1: "相性50%！程よいビジネス仲間！",
           line2: "〜年に1回会えば十分な距離感〜"
@@ -520,28 +520,29 @@
     };
 
     /* =========================================================
-       マップ構造の生成（縦5段 ➔ 最後に🔥1つに完全収束）
+       マップ構造の生成
+       ステップ0〜8（第8問）まで最大5列を維持
+       ステップ9で中央1ノード（0）へ一斉収束
+       ステップ10で🔥1つに完全合流
        ========================================================= */
     const TOTAL_STEPS = 10;
     const NODE_SPACING_X = 130;
     const SVG_HEIGHT = 260;
     const CENTER_Y = SVG_HEIGHT / 2;
-    const ROW_OFFSET = 38; // 縦の間隔
+    const ROW_OFFSET = 38;
 
-    // 各ステップで存在できる行（0=中央, ±1, ±2の最大5列）
-    // ステップ9で1列（0）、ステップ10で🔥1つに完全収束
     const STEP_ROWS = [
-      [0],              // 0: スタート
-      [-1, 0, 1],       // 1
-      [-1, 0, 1],       // 2
-      [-2, -1, 0, 1, 2],// 3（最大5段に広がる）
-      [-2, -1, 0, 1, 2],// 4
-      [-2, -1, 0, 1, 2],// 5
-      [-1, 0, 1],       // 6（徐々に収束）
-      [-1, 0, 1],       // 7
-      [-1, 0, 1],       // 8
-      [0],              // 9（中央1ノードへ集合）
-      [0]               // 10（完全収束：🔥ボスアイコン）
+      [0],               // 0: スタート
+      [-1, 0, 1],        // 1
+      [-1, 0, 1],        // 2
+      [-2, -1, 0, 1, 2], // 3（5列に拡大）
+      [-2, -1, 0, 1, 2], // 4
+      [-2, -1, 0, 1, 2], // 5
+      [-2, -1, 0, 1, 2], // 6
+      [-2, -1, 0, 1, 2], // 7
+      [-2, -1, 0, 1, 2], // 8（第8問までワイドな5列をキープ！）
+      [0],               // 9（第9問で一気に中央1ノードへ大収束！）
+      [0]                // 10（完全収束：🔥ボスアイコン）
     ];
 
     const ICONS_POOL = ["⚔️", "☕", "❤️", "💎", "🛡️", "🔮", "✨", "🎲", "🍖"];
@@ -549,14 +550,14 @@
     let nodes = {};
     let edges = [];
 
-    // ノードの定義
+    // ノード定義
     for (let step = 0; step <= TOTAL_STEPS; step++) {
       const rows = STEP_ROWS[step];
       rows.forEach(r => {
         const id = `${step}_${r}`;
         let icon = "❓";
         if (step === 0) icon = "🚩";
-        else if (step === TOTAL_STEPS) icon = "🔥"; // 最後の完全収束ノード
+        else if (step === TOTAL_STEPS) icon = "🔥";
         else icon = ICONS_POOL[(step * 3 + Math.abs(r)) % ICONS_POOL.length];
 
         nodes[id] = {
@@ -578,9 +579,12 @@
       currentRows.forEach(cr => {
         const fromId = `${step}_${cr}`;
         nextRows.forEach(nr => {
-          // 行の移動が±1以内、または最終合流ノードなら繋ぐ
-          if (Math.abs(cr - nr) <= 1 || nextRows.length === 1) {
-            edges.push({ from: fromId, to: nextRows.length === 1 ? `${step+1}_0` : `${step+1}_${nr}` });
+          // 次の列が1つだけ（収束ステップ）なら全員から中央へ接続
+          if (nextRows.length === 1) {
+            edges.push({ from: fromId, to: `${step+1}_0` });
+          } else if (Math.abs(cr - nr) <= 1) {
+            // 通常時は上下±1以内で網の目状に接続
+            edges.push({ from: fromId, to: `${step+1}_${nr}` });
           }
         });
       });
@@ -591,7 +595,6 @@
        ========================================================= */
     const svg = document.getElementById('map-svg');
 
-    // 六角形パスの計算
     function hexPath(cx, cy, r) {
       let path = "";
       for (let i = 0; i < 6; i++) {
@@ -603,7 +606,6 @@
       return path + "Z";
     }
 
-    // エッジの描画
     edges.forEach(e => {
       const n1 = nodes[e.from];
       const n2 = nodes[e.to];
@@ -619,12 +621,10 @@
       svg.appendChild(line);
     });
 
-    // ノードの描画
     Object.values(nodes).forEach(n => {
       const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
       g.setAttribute("id", `node-${n.id}`);
 
-      // 六角形背景
       const hex = document.createElementNS("http://www.w3.org/2000/svg", "path");
       hex.setAttribute("d", hexPath(n.x, n.y, 20));
       hex.setAttribute("fill", n.step === TOTAL_STEPS ? "#ff6b6b" : "#3d405b");
@@ -632,7 +632,6 @@
       hex.setAttribute("stroke-width", "2");
       g.appendChild(hex);
 
-      // アイコン文字
       const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
       text.setAttribute("x", n.x);
       text.setAttribute("y", n.y + 6);
@@ -659,12 +658,10 @@
       avatar.style.left = `${node.x}px`;
       avatar.style.top = `${node.y}px`;
 
-      // 自動横スクロール追従
       const container = document.getElementById('map-container');
       const targetScroll = node.x - container.clientWidth / 2;
       container.scrollTo({ left: Math.max(0, targetScroll), behavior: 'smooth' });
 
-      // 通過ノードの点灯
       const nodeEl = document.getElementById(`node-${currentNodeId}`);
       if (nodeEl) {
         nodeEl.querySelector('path').setAttribute('fill', '#20c997');
@@ -702,15 +699,15 @@
       lastChoiceType = type;
       const nextStep = currentStep + 1;
 
-      // 最後のステップ（9->10）は必ず0（中央の🔥）へ着地
+      // 収束ステップ（9と10）は必ず0（中央）へ向かう
       let nextRow = 0;
-      if (nextStep < TOTAL_STEPS) {
+      if (nextStep < 9) {
         const candidateRows = STEP_ROWS[nextStep];
         let idealRow = currentRow;
         if (type === 'A') idealRow -= 1; // 上へ
         if (type === 'C') idealRow += 1; // 下へ
 
-        // 最も近い有効な行を選択
+        // 最も近い有効な行へ
         nextRow = candidateRows.reduce((prev, curr) =>
           Math.abs(curr - idealRow) < Math.abs(prev - idealRow) ? curr : prev
         );
@@ -733,12 +730,10 @@
       if (currentStep < TOTAL_STEPS) {
         renderQuestion();
       } else {
-        // 🔥ノード到着後、少し余韻を残して結果画面へ
         setTimeout(showFinalResult, 600);
       }
     }
 
-    // 文字列が画像パスか判定してHTMLを組み立てる関数
     function renderCharContent(charVal) {
       if (typeof charVal === 'string' && (charVal.includes('/') || charVal.endsWith('.png') || charVal.endsWith('.jpg') || charVal.endsWith('.webp'))) {
         return `<img src="${charVal}" alt="character">`;
@@ -750,11 +745,9 @@
       const res = GAME_DATA.results[lastChoiceType] || GAME_DATA.results.A;
       const modal = document.getElementById('result-modal');
 
-      // 背景色（渦巻きグラデーション）の設定
       document.getElementById('spiral-bg').style.setProperty('--res-bg-1', res.bgColors[0]);
       document.getElementById('spiral-bg').style.setProperty('--res-bg-2', res.bgColors[1]);
 
-      // テキスト・装飾の流し込み
       document.getElementById('res-tag').textContent = res.tag;
       document.getElementById('res-title').textContent = res.title;
       document.getElementById('res-corner-face').innerHTML = renderCharContent(res.cornerFace);
@@ -770,7 +763,6 @@
       location.reload();
     }
 
-    // 初期化実行
     window.onload = () => {
       updatePlayerPosition();
       renderQuestion();
