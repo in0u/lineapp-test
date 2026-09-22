@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>五常 相性診断</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow-x: hidden;
+      overflow-y: auto;
+      background-color: #030611;
+      font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+      color: #fff;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 450px;
+      min-height: 100%;
+      margin: 0 auto;
+      position: relative;
+      background: #030611;
+    }
+
+    /* --- 上部：陣・ビジュアル演出エリア --- */
+    .visual-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 941 / 1672;
+      flex-shrink: 0;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .base-bg {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+    }
+
+    /* 各オーブの発光エフェクト */
+    .orb-glow {
+      position: absolute;
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.9);
+      transition: opacity 0.5s ease, transform 0.4s ease, box-shadow 0.4s ease;
+      z-index: 6;
+    }
+
+    /* 添付縦長画像に基づく座標 (X%, Y%) */
+    .orb-jin   { left: 50.0%; top: 34.5%; --glow-color: rgba(30, 165, 255, 0.95); }
+    .orb-gi    { left: 78.5%; top: 48.0%; --glow-color: rgba(255, 60, 50, 0.95); }
+    .orb-rei   { left: 68.5%; top: 66.5%; --glow-color: rgba(195, 80, 255, 0.95); }
+    .orb-chi   { left: 31.5%; top: 66.5%; --glow-color: rgba(40, 240, 120, 0.95); }
+    .orb-shin  { left: 21.5%; top: 48.0%; --glow-color: rgba(255, 190, 30, 0.95); }
+    .orb-toku  { left: 50.0%; top: 52.8%; --glow-color: rgba(255, 225, 90, 1.0); width: 84px; height: 84px; }
+
+    /* 回答済み：点灯を維持 */
+    .orb-glow.cleared {
+      opacity: 0.85;
+      transform: translate(-50%, -50%) scale(1.0);
+      box-shadow: 0 0 15px 4px var(--glow-color), inset 0 0 10px var(--glow-color);
+    }
+
+    /* 現在の回答中：激しくパルス発光 */
+    .orb-glow.current {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.1);
+      box-shadow: 0 0 28px 12px var(--glow-color), inset 0 0 15px var(--glow-color);
+      animation: orbPulse 1.3s infinite alternate ease-in-out;
+    }
+
+    @keyframes orbPulse {
+      0% { transform: translate(-50%, -50%) scale(1.0); filter: brightness(1.1); }
+      100% { transform: translate(-50%, -50%) scale(1.25); filter: brightness(1.7); }
+    }
+
+    /* --- 下部：質問・カード選択エリア --- */
+    .quiz-container {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14px 18px 20px;
+      background: linear-gradient(180deg, rgba(3,6,17,0.85) 0%, rgba(3,6,17,1) 100%);
+      border-top: 1px solid rgba(223, 186, 115, 0.25);
+      z-index: 10;
+    }
+
+    .question-box {
+      text-align: center;
+    }
+
+    .step-tag {
+      display: inline-block;
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: #dfba73;
+      border-bottom: 1px solid rgba(223, 186, 115, 0.6);
+      padding-bottom: 2px;
+      margin-bottom: 6px;
+    }
+
+    .question-text {
+      font-size: 15px;
+      line-height: 1.45;
+      font-weight: bold;
+      color: #f7f4ed;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .choices-box {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .choice-card {
+      background: linear-gradient(135deg, rgba(30, 36, 56, 0.9) 0%, rgba(15, 18, 28, 0.95) 100%);
+      border: 1px solid rgba(223, 186, 115, 0.4);
+      border-radius: 8px;
+      padding: 13px 14px;
+      color: #f3efe6;
+      font-size: 13.5px;
+      line-height: 1.3;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      transition: all 0.15s ease;
+    }
+
+    .choice-card:active {
+      transform: scale(0.97);
+      border-color: #ffd700;
+      background: linear-gradient(135deg, rgba(60, 72, 105, 0.95) 0%, rgba(30, 35, 55, 1) 100%);
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+    }
+
+    /* --- パーティクル・フラッシュ・結果演出 --- */
+    #fx-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 80;
+    }
+
+    .screen-flash {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #ffffff;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 95;
+      transition: opacity 0.25s ease-out;
+    }
+    .screen-flash.flash {
+      opacity: 1;
+    }
+
+    .result-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #030611;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.7s ease;
+      z-index: 100;
+    }
+    .result-container.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .result-image {
+      max-width: 90%;
+      max-height: 72%;
+      border-radius: 10px;
+      box-shadow: 0 0 30px rgba(223, 186, 115, 0.45);
+      object-fit: contain;
+    }
+
+    .retry-btn {
+      margin-top: 22px;
+      padding: 12px 38px;
+      font-size: 14px;
+      letter-spacing: 2px;
+      color: #050811;
+      background: linear-gradient(135deg, #ffd778 0%, #dfba73 100%);
+      border: none;
+      border-radius: 25px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(223, 186, 115, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <canvas id="fx-canvas"></canvas>
+  <div id="flash" class="screen-flash"></div>
+
+  <!-- 上部：添付縦長画像 ＋ 各オーブ -->
+  <div class="visual-container" id="visual-box">
+    <img src="images/bg2.png" alt="五常の陣" class="base-bg">
+
+    <!-- 各オーブ -->
+    <div id="orb-jin"  class="orb-glow orb-jin"></div>
+    <div id="orb-gi"   class="orb-glow orb-gi"></div>
+    <div id="orb-rei"  class="orb-glow orb-rei"></div>
+    <div id="orb-chi"  class="orb-glow orb-chi"></div>
+    <div id="orb-shin" class="orb-glow orb-shin"></div>
+    <div id="orb-toku" class="orb-glow orb-toku"></div>
+  </div>
+
+  <!-- 背景上に重ねる問題・選択肢 -->
+  <div class="quiz-container">
+    <div class="question-box">
+      <div id="step-tag" class="step-tag">第一問【仁】</div>
+      <div id="question-text" class="question-text">読み込み中...</div>
+    </div>
+
+    <div class="choices-box">
+      <button class="choice-card" onclick="handleChoice(0)">選択肢 A</button>
+      <button class="choice-card" onclick="handleChoice(1)">選択肢 B</button>
+      <button class="choice-card" onclick="handleChoice(2)">選択肢 C</button>
+    </div>
+  </div>
+
+  <!-- 結果画面 -->
+  <div id="result-view" class="result-container">
+    <img id="result-img" class="result-image" src="" alt="診断結果">
+    <button class="retry-btn" onclick="resetQuiz()">もう一度占う</button>
+  </div>
+</div>
+
+<script>
+  /* ============================================================
+     1. 問題文・選択肢の編集エリア
+     ============================================================ */
+  const QUESTIONS = [
+    {
+      type: "jin",
+      tag: "第一問【仁】",
+      question: "目の前で困っている人がいたら、どう対応する？",
+      choices: [
+        "すぐに声をかけて手を差し伸べる",
+        "状況を冷静に見極めてから動く",
+        "陰ながらそっとサポートする"
+      ]
+    },
+    {
+      type: "gi",
+      tag: "第二問【義】",
+      question: "理不尽な状況に直面したとき、あなたがとる行動は？",
+      choices: [
+        "正義感を胸に真っ向から立ち向かう",
+        "感情的にならずルールや筋を通す",
+        "衝突を避けて平和的な妥協点を探す"
+      ]
+    },
+    {
+      type: "rei",
+      tag: "第三問【礼】",
+      question: "初対面の人や目上の人と接するときに最も大切にすることは？",
+      choices: [
+        "丁寧な言葉遣いと礼節を重んじる",
+        "飾らず自然体で相手の懐に飛び込む",
+        "相手が話しやすいように聞き役に回る"
+      ]
+    },
+    {
+      type: "chi",
+      tag: "第四問【智】",
+      question: "未知の大きな課題にぶつかったとき、どう解決する？",
+      choices: [
+        "直感と経験を信じて行動で切り拓く",
+        "徹底的にデータを集めて戦略を練る",
+        "周囲の知恵を集めてチームで挑む"
+      ]
+    },
+    {
+      type: "shin",
+      tag: "第五問【信】",
+      question: "人と絆を深めるために最も欠かせないものは？",
+      choices: [
+        "約束を絶対に守り抜く一貫性",
+        "何があっても相手を疑わない純粋な心",
+        "お互いの本音を隠さずぶつけ合うこと"
+      ]
+    },
+    {
+      type: "toku",
+      tag: "最終問【徳】",
+      question: "あなたが人生において最も成し遂げたい境地は？",
+      choices: [
+        "誰もが調和し、笑い合える世界を築く",
+        "己の道を極め、孤高の力を手に入れる",
+        "運命の流れに身を任せ、全てを包み込む"
+      ]
+    }
+  ];
+
+  /* ============================================================
+     2. 進行・点灯エフェクト管理
+     ============================================================ */
+  let currentStep = 0;
+  const orbTypes = ["jin", "gi", "rei", "chi", "shin", "toku"];
+  const orbElements = {};
+  orbTypes.forEach(t => orbElements[t] = document.getElementById(`orb-${t}`));
+
+  function updateUI() {
+    const q = QUESTIONS[currentStep];
+    document.getElementById("step-tag").innerText = q.tag;
+    document.getElementById("question-text").innerText = q.question;
+
+    const buttons = document.querySelectorAll(".choice-card");
+    q.choices.forEach((choice, index) => {
+      if (buttons[index]) buttons[index].innerText = choice;
+    });
+
+    // オーブ発光状態の更新
+    orbTypes.forEach((type, idx) => {
+      const el = orbElements[type];
+      el.classList.remove("current", "cleared");
+
+      if (idx < currentStep) {
+        // 回答済み：点灯維持
+        el.classList.add("cleared");
+      } else if (idx === currentStep) {
+        // 現在回答中：強くパルス発光
+        el.classList.add("current");
+      }
+    });
+
+  }
+
+  function handleChoice(choiceIndex) {
+    if (currentStep < 5) {
+      currentStep++;
+      updateUI();
+    } else {
+      // 最終問（徳）：回答によって結果 (r1.png ~ r3.png) を決定
+      const resultIndex = choiceIndex + 1;
+      triggerClimaxAnimation(resultIndex);
+    }
+  }
+
+  /* ============================================================
+     3. クライマックス演出（全点灯 ➔ 爆散 ➔ 結果）
+     ============================================================ */
+  function triggerClimaxAnimation(resultNum) {
+    // 徳もクリア状態にし、全オーブが最大輝度へ
+    orbElements["toku"].classList.remove("current");
+    orbElements["toku"].classList.add("cleared");
+
+    // 黄金パーティクル爆散
+    startParticles();
+
+    // ホワイトフラッシュ
+    setTimeout(() => {
+      const flash = document.getElementById("flash");
+      flash.classList.add("flash");
+
+      setTimeout(() => {
+        document.getElementById("result-img").src = `images/r${resultNum}.png`;
+        document.getElementById("result-view").classList.add("show");
+        flash.classList.remove("flash");
+      }, 400);
+    }, 750);
+  }
+
+  function resetQuiz() {
+    currentStep = 0;
+    document.getElementById("result-view").classList.remove("show");
+    updateUI();
+  }
+
+  updateUI();
+
+  /* ============================================================
+     4. Canvas パーティクル
+     ============================================================ */
+  const canvas = document.getElementById("fx-canvas");
+  const ctx = canvas.getContext("2d");
+  let particles = [];
+  let animId = null;
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+
+  function startParticles() {
+    particles = [];
+    const vBox = document.getElementById("visual-box").getBoundingClientRect();
+    // 徳の中心位置から爆散
+    const cx = vBox.left + vBox.width * 0.5;
+    const cy = vBox.top + vBox.height * 0.528;
+
+    for (let i = 0; i < 140; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 9 + 4;
+      particles.push({
+        x: cx,
+        y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: Math.random() * 5 + 2,
+        alpha: 1,
+        color: ['#ffd700', '#ffea80', '#ffffff', '#ff9900', '#66e5ff'][Math.floor(Math.random() * 5)]
+      });
+    }
+
+    if (!animId) loopParticles();
+  }
+
+  function loopParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.alpha -= 0.014;
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = Math.max(0, p.alpha);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    particles = particles.filter(p => p.alpha > 0);
+
+    if (particles.length > 0) {
+      animId = requestAnimationFrame(loopParticles);
+    } else {
+      cancelAnimationFrame(animId);
+      animId = null;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+</script>
+</body>
+</html>
